@@ -72,13 +72,13 @@ class MeineAnalyseTab(QWidget):
         layout.addWidget(mein_button)
     
     def fuehre_analyse_durch(self):
-        print("Analyse wird durchgeführt…")```
+        print("Analyse wird durchgeführt…")
 3. Zugriff auf gemeinsame Ressourcen über APIs
 Nutzen Sie die im SharedState gespeicherten API-Instanzen für den Datenzugriff und die Gerätesteuerung. Direkte Zugriffe auf Attribute anderer Tabs oder das SharedState für persistente Daten sind zu vermeiden (Ausnahme: flüchtige Messdaten).
 
 Beispiel: Spektrum-Peak über shared_data.wavelengths und shared_data.intensities finden (flüchtige Daten)
 
-```Python
+Python
 
 def finde_spektrum_peak(self):
     # Direkter Zugriff auf flüchtige Messdaten aus SharedState ist hier erlaubt
@@ -89,10 +89,10 @@ def finde_spektrum_peak(self):
         peak_index = np.argmax(intensities)
         print(f"Peak bei {wavelengths[peak_index]:.2f} nm gefunden.")
     else:
-        print("Keine Spektrometer-Daten vorhanden.")```
+        print("Keine Spektrometer-Daten vorhanden.")
 Beispiel: SMU fernsteuern über SmuApi
 
-```Python
+Python
 
 def steuere_smu_fern(self):
     # Zugriff auf SMU-Funktionen über die dedizierte SMU-API
@@ -113,10 +113,10 @@ def steuere_smu_fern(self):
         else:
             print("SMU-Operation fehlgeschlagen oder keine Daten zurückgegeben.")
     else:
-        print("SMU-API nicht verfügbar.")```
+        print("SMU-API nicht verfügbar.")
 Beispiel: Profilinformationen über ProfileApi abrufen
 
-```Python
+Python
 
 def lade_aktives_profil(self):
     # Zugriff auf Profil-Daten über die Profile-API
@@ -127,18 +127,18 @@ def lade_aktives_profil(self):
         else:
             print("Kein aktives Profil geladen.")
     else:
-        print("Profile-API nicht verfügbar.")```
+        print("Profile-API nicht verfügbar.")
 4. Modul registrieren (main.py)
 Zum Schluss muss das neue Modul bekannt gemacht werden:
 
 Import in main.py:
 
-```Python
+Python
 
-from tabs.meine_analyse_tab import MeineAnalyseTab```
+from tabs.meine_analyse_tab import MeineAnalyseTab
 In load_modules() einfügen:
 
-```Python
+Python
 
 # Stellen Sie sicher, dass die benötigten APIs vor dem Tab instanziiert sind
 # und dem SharedState hinzugefügt wurden, z.B.:
@@ -146,7 +146,7 @@ In load_modules() einfügen:
 # self.shared_data.smu_api = SmuApi(...)
 
 mein_tab = MeineAnalyseTab(self.shared_data)
-self.tabs.addTab(mein_tab, "Meine Analyse")```
+self.tabs.addTab(mein_tab, "Meine Analyse")
 Fertig! Beim nächsten Start ist der neue Tab aktiv und vollständig ins System eingebunden.
 
 Code-Organisation
@@ -215,7 +215,7 @@ Place a new file in tabs/, e.g. my_analysis_tab.py.
 2. Write the class
 Each module is a QWidget subclass. The basic structure remains the same. The SharedState is passed in the constructor, but primarily used to access the API instances:
 
-```Python
+Python
 
 # /tabs/my_analysis_tab.py
 
@@ -246,13 +246,13 @@ class MyAnalysisTab(QWidget):
         layout.addWidget(my_button)
     
     def perform_analysis(self):
-        print("Performing analysis…")```
+        print("Performing analysis…")
 3. Access shared resources via APIs
 Use the API instances stored in SharedState for data access and device control. Direct access to attributes of other tabs or SharedState for persistent data should be avoided (exception: volatile measurement data).
 
 Example: Finding the spectrum peak using shared_data.wavelengths and shared_data.intensities (volatile data)
 
-```Python
+Python
 
 def find_spectrum_peak(self):
     # Direct access to volatile measurement data from SharedState is allowed here
@@ -263,10 +263,10 @@ def find_spectrum_peak(self):
         peak_index = np.argmax(intensities)
         print(f"Peak found at {wavelengths[peak_index]:.2f} nm.")
     else:
-        print("No spectrometer data available.")```
+        print("No spectrometer data available.")
 Example: Remote control of the SMU via SmuApi
 
-```Python
+Python
 
 def remote_control_smu(self):
     # Access SMU functions via the dedicated SMU API
@@ -287,12 +287,12 @@ def remote_control_smu(self):
         else:
             print("SMU operation failed or no data returned.")
     else:
-        print("SMU API not available.")```
+        print("SMU API not available.")
 Example: Retrieving profile information via ProfileApi
 
-```Python
+Python
 
-def load_active_profile(self):
+def retrieve_profile_info(self):
     # Access profile data via the Profile API
     if self.profile_api:
         active_profile = self.profile_api.get_active_profile()
@@ -302,17 +302,17 @@ def load_active_profile(self):
             print("No active profile loaded.")
     else:
         print("Profile API not available.")
-4. Register the module (main.py)```
+4. Register the module (main.py)
 To activate the tab:
 
 Import in main.py:
 
-```Python
+Python
 
-from tabs.my_analysis_tab import MyAnalysisTab```
+from tabs.my_analysis_tab import MyAnalysisTab
 Add it in load_modules():
 
-```Python
+Python
 
 # Ensure that required APIs are instantiated before the tab
 # and added to SharedState, e.g.:
@@ -320,7 +320,7 @@ Add it in load_modules():
 # self.shared_data.smu_api = SmuApi(...)
 
 my_tab = MyAnalysisTab(self.shared_data)
-self.tabs.addTab(my_tab, "My Analysis")```
+self.tabs.addTab(my_tab, "My Analysis")
 Done! After restarting, the new tab will show up and work out of the box.
 
 Code Organization
@@ -359,4 +359,4 @@ README.md: This main README will be regularly updated to reflect the current arc
 
 Docstrings: All modules, classes, methods, and more complex functions must include meaningful Docstrings describing their purpose, parameters, return values, and exceptions.
 
-In-Code Comments: Comments should explain complex logic, justify non-obvious decisions, and explain "Why" rather than just "What".
+In-Code Comments: Comments should explain complex logic, justify non-obvious decisions, and explain "Why" rather than just "What" explain.
