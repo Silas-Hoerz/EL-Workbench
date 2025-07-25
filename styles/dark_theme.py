@@ -34,33 +34,60 @@ def lighten(hex_color: str, factor=1.2) -> str:
 
 # === Farbschema definieren (HSL für bessere Kontrolle) === #
 COLOR_SCHEME = {
-    # Hintergrundebenen
-    "bg_darkest": hsl(71, 8, 15),
-    "bg_darker": hsl(71, 8, 18),
-    "bg_mid": hsl(71, 8, 21),
-    "bg_light": hsl(71, 8, 24),
+    # # Hintergrundebenen
+    # "bg_darkest": hsl(71, 8, 15),
+    # "bg_darker": hsl(71, 8, 18),
+    # "bg_mid": hsl(71, 8, 21),
+    # "bg_light": hsl(71, 8, 24),
 
-    # Textfarben
-    "text_primary":  hsl(49, 11, 95),
-    "text_disabled": hsl(49, 11, 30),
-    "text_inverse": hsl(49, 11, 95),
+    # # Textfarben
+    # "text_primary":  hsl(49, 11, 95),
+    # "text_disabled": hsl(49, 11, 30),
+    # "text_inverse": hsl(49, 11, 95),
 
-    # Akzentfarben (Buttons etc.)
-    "accent": hsl(49, 11, 40),
-    "accent_hover": hsl(49, 11, 50),
-    "accent_pressed": hsl(49, 11, 50),
-    "accent_brigther": hsl(49, 11, 50),
-    "accent_brigthest": hsl(49, 11, 60),
+    # # Akzentfarben (Buttons etc.)
+    # "accent": hsl(49, 11, 40),
+    # "accent_hover": hsl(49, 11, 50),
+    # "accent_pressed": hsl(49, 11, 50),
+    # "accent_brigther": hsl(49, 11, 50),
+    # "accent_brightest": hsl(49, 11, 60),
     
 
-    # Info / Fortschritt
-    "info": hsl(204, 90, 60),
+    # # Info / Fortschritt
+    # "info": hsl(204, 90, 60),
+
+    # # Warnungen
+    # "error": hsl(0, 80, 60),
+    # "warning": hsl(40, 90, 60),
+
+    # #Transparent
+    # "transparent": "rgba(0, 0, 0, 0)",
+    # Hintergrundebenen (sehr dunkles bis mittleres Anthrazit/Blau)
+    "bg_darkest": "hsl(210, 20%, 12%)",   # sehr dunkel, fast #1D2126 (Anthrazit)
+    "bg_darker": "hsl(210, 15%, 18%)",    # etwas heller, nahe #254A59 dunkles Blau
+    "bg_mid": "hsl(205, 15%, 25%)",       # mittleres Blau-Grau, ca #707F8C
+    "bg_light": "hsl(190, 30%, 35%)",     # helleres, leicht türkisfarbenes Grau, ca #82D0D9
+
+    # Textfarben
+    "text_primary": "hsl(190, 40%, 90%)",  # helles Türkis/Weiß, gut lesbar auf dunklem Grund (#D5F2F2)
+    "text_disabled": "hsl(210, 15%, 50%)", # mittleres Blau-Grau, gedimmt (#707F8C)
+    "text_inverse": "hsl(210, 20%, 12%)",  # sehr dunkel (für helle Hintergründe)
+
+    # Akzentfarben (Buttons, Hover, Aktiv)
+    "accent": "hsl(190, 70%, 60%)",        # frisches Türkis (#82D0D9)
+    "accent_hover": "hsl(190, 80%, 70%)",  # etwas heller/türkisiger
+    "accent_pressed": "hsl(190, 60%, 50%)",# dunkler/tieferes Türkis
+    "accent_brighter": "hsl(190, 70%, 65%)",  # noch heller, für Effekte
+    "accent_brightest": "hsl(190, 70%, 70%)", # sehr hell, fast weiß
+
+    # Info / Fortschritt (Blau-Ton passend zum Schema)
+    "info": "hsl(200, 90%, 65%)",           # kräftiges Blau, ähnlich #254A59 aber heller
 
     # Warnungen
-    "error": hsl(0, 80, 60),
-    "warning": hsl(40, 90, 60),
+    "error": "hsl(0, 80%, 60%)",            # klassisches Rot (bleib so)
+    "warning": "hsl(40, 90%, 60%)",         # klassisches Gelb/Orange (bleib so)
 
-    #Transparent
+    # Transparent
     "transparent": "rgba(0, 0, 0, 0)",
 }
 
@@ -273,6 +300,21 @@ QRadioButton::indicator:disabled:checked {{
     border: 1px solid {text_disabled};
 }}
 
+QPushButton#selectButton {{
+    border: none;
+    background-color: transparent;
+}}
+QPushButton#selectButton:checked {{
+    background-color: {bg_light};
+    border-radius: 5px;
+}}
+QPushButton#selectButton:hover {{
+    border: 1px solid {bg_light};
+    border-radius: 5px;
+}}
+
+
+
 QTabBar::tab {{
     font-size: 13px;
     font-weight: 600;
@@ -294,7 +336,7 @@ QTabBar::tab:hover {{
 }}
 
 #ArrowWidget[active="true"] {{
-    color: {accent_brigthest};
+    color: {accent_brightest};
 }}
 
 #ArrowWidget[active="false"] {{

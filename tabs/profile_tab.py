@@ -129,7 +129,7 @@ class ProfileTab(QWidget):
         storage_location_layout.addWidget(self.directory_field)
         self.button_select_directory = QPushButton()
 
-        self.button_select_directory.setIcon(QIcon(os.path.join(BASE_DIR, "icons", "folder.svg")))
+        self.button_select_directory.setIcon(QIcon(os.path.join(BASE_DIR, "icons", "b_folder.svg")))
         self.button_select_directory.setIconSize(QSize(20, 20)) 
        
         self.button_select_directory.clicked.connect(self._select_storage_location)

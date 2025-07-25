@@ -28,9 +28,9 @@
 import sys
 import os
 import numpy
-from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout
-from PyQt6.QtCore import QObject # Important if SharedState will emit signals
-
+from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget, QWidget, QVBoxLayout,  QSplashScreen
+from PyQt6.QtCore import QObject,Qt,QSettings, QPoint, QSize # Important if SharedState will emit signals
+from PyQt6.QtGui import QIcon, QPixmap
 # --- Global Application Metadata ---
 __version__ = "1.1.0"
 
@@ -101,9 +101,16 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        
+        # QSettings mit Organisation und Anwendungname
+        self.settings = QSettings("ELWorkbenchTeam", "EL-Workbench")
+
+        # Fenster-Icon und Titel
+        icon_path = os.path.join(os.path.dirname(__file__), "icons", "logo.ico")
+        self.setWindowIcon(QIcon(icon_path))
         self.setWindowTitle(f"EL-Workbench - v{__version__}")
-        self.setGeometry(100, 100, 1200, 700)
+
+        # Fenstergröße und Position laden
+        self.restore_window_settings()
 
         self.shared_data = SharedData() # SharedData wird hier korrekt initialisiert
 
@@ -180,12 +187,61 @@ class MainWindow(QMainWindow):
         # self.iv_measurement_widget = IVMeasurementTab(self.shared_data)
         # self.tabs.addTab(self.iv_measurement_widget, "I-V Kennlinien")
 
+    def closeEvent(self, event):
+        # Fenstergröße und Position speichern beim Schließen
+        self.save_window_settings()
+        super().closeEvent(event)
+
+    def save_window_settings(self):
+        self.settings.setValue("window_size", self.size())
+        self.settings.setValue("window_pos", self.pos())
+
+    def restore_window_settings(self):
+        size = self.settings.value("window_size")
+        pos = self.settings.value("window_pos")
+
+        if size is not None and isinstance(size, QSize):
+            self.resize(size)
+        else:
+            self.resize(1200, 700)  # Standardgröße
+
+        if pos is not None and isinstance(pos, QPoint):
+            self.move(pos)
+        else:
+            self.move(100, 100)     # Standardposition
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     
+    splash_path = os.path.join(os.path.dirname(__file__), "icons", "logo.png")
+
+    if os.path.exists(splash_path):
+        pixmap_orig = QPixmap(splash_path)
+
+        # Skaliere auf 16:9, z.B. 480x270 px
+        splash_size = (480, 270)
+        pixmap_scaled = pixmap_orig.scaled(splash_size[0], splash_size[1], 
+                                        Qt.AspectRatioMode.IgnoreAspectRatio,
+                                        Qt.TransformationMode.SmoothTransformation)
+
+        splash = QSplashScreen(pixmap_scaled)
+    else:
+        splash = QSplashScreen()
+        splash.setStyleSheet("background-color: #3498db; color: white; font-size: 20px;")
+        splash.showMessage("EL-Workbench wird geladen...", Qt.AlignmentFlag.AlignCenter, Qt.GlobalColor.white)
+
+    splash.setWindowFlag(Qt.WindowType.FramelessWindowHint)
+    splash.show()
+    app.processEvents()  # Wichtig, damit der Splash sofort angezeigt wird
+
+    import time
+    time.sleep(0.1)  # 1,5 Sekunden warten (im echten Fall Initialisierung)
+
     main_win = MainWindow()
     app.setStyleSheet(DARK_STYLESHEET)
+    
+    splash.finish(main_win)  # Splash Screen schließen, sobald Hauptfenster bereit ist
+    
     main_win.show()
     
     sys.exit(app.exec())
