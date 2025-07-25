@@ -6,12 +6,13 @@
  File:          spectrum_tab.py
  Author:        Silas Hörz
  Creation date: 2025-06-25
- Last modified: 2025-07-18
- Version:       1.3.0
+ Last modified: 2025-07-25 (Adapted to new API-centric design rules)
+ Version:       2.0.0
 ============================================================================
  Description:
     Modul (Tab) für die Ansteuerung eines Ocean Optics Spektrometers
-    innerhalb des EL-Workbench.
+    innerhalb des EL-Workbench. Verantwortlich für UI, Gerätesteuerung
+    und Bereitstellung von Spektraldaten im SharedState.
 ============================================================================
  Change Log:
  - 2025-06-25: Initial version created. Refactored from single-file app.
@@ -23,12 +24,18 @@
                clearer integration time dependency (strong at 20ms, low at 1000ms).
  - 2025-07-18: Adapted dummy spectrum generation to simulate NIRQUEST512
                structure (wavelength range and number of points).
+ - 2025-07-25: Refactored to align with new design rules:
+               - Renamed shared_data.spec to shared_data.spectrometer_device.
+               - Renamed shared_data.wavelengths/intensities to
+                 shared_data.current_wavelengths/current_intensities for clarity.
+               - Emphasized direct SharedState attribute use for live measurement data
+                 as per Design Rule 1.4 (transient data).
 ============================================================================
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-import datetime # Für Zeitstempel im Log
+import datetime # For timestamps in the log
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QPushButton, QLabel, QComboBox, QHBoxLayout,
@@ -45,24 +52,26 @@ from seabreeze.spectrometers import Spectrometer, list_devices
 class SpectrumTab(QWidget):
     """
     Ein QWidget-Tab zur Steuerung und Anzeige von Spektrometerdaten.
+    Dieser Tab ist für die direkte Interaktion mit dem Spektrometer
+    und die Bereitstellung der aktuellen Messdaten im SharedState verantwortlich.
     """
     def __init__(self, shared_data):
         """
         Initialisiert den SpectrumTab.
 
         Args:
-            shared_data: Ein Objekt, das gemeinsame Daten (z.B. das Spektrometer-Objekt)
-                         zwischen verschiedenen Tabs oder Modulen enthält.
+            shared_data: Ein Objekt, das gemeinsame Daten (z.B. das Spektrometer-Objekt
+                         und die aktuellen Messdaten) zwischen verschiedenen Tabs oder Modulen enthält.
         """
         super().__init__()
 
         self.shared_data = shared_data
-        self.devices = []
+        self.devices = [] # Liste der gefundenen Seabreeze-Geräte
         self.integration_time_ms = 100 # Standard-Integrationszeit
         self.dummy_mode_active = False # Flag für den Dummy-Modus
         self.dummy_noise_strength = 50 # Standard-Rauschstärke für Dummy-Modus
 
-        # --- NEU: Feste Wellenlängen für den Dummy-Modus basierend auf echten Daten ---
+        # --- Feste Wellenlängen für den Dummy-Modus basierend auf echten Daten ---
         # Diese Werte kommen aus dem JSON des NIRQUEST512:
         self.dummy_wavelengths = np.linspace(903.07996, 2527.059023186984, 512)
         # ----------------------------------------------------------------------
@@ -118,7 +127,6 @@ class SpectrumTab(QWidget):
         self.dummy_noise_spinbox.setEnabled(False)
         dummy_noise_layout.addWidget(self.dummy_noise_spinbox)
         control_layout.addLayout(dummy_noise_layout)
-
 
         # Geräteauswahl
         device_layout = QHBoxLayout()
@@ -190,12 +198,12 @@ class SpectrumTab(QWidget):
         """Aktiviert oder deaktiviert die Steuerlemente für das Spektrometer."""
         self.device_combo.setEnabled(enabled)
         # connect_button wird durch toggle_device_connection gehandhabt, sollte aber klickbar sein, wenn nicht im dummy mode
-        # self.connect_button.setEnabled(enabled)
+        # self.connect_button.setEnabled(enabled) # Handled by toggle_device_connection
         self.integration_spinbox.setEnabled(enabled)
         self.set_integration_button.setEnabled(enabled)
         self.start_measurement_button.setEnabled(enabled)
-        # Dummy-Checkbox und Rauschstärke-Spinbox sollten immer aktiv sein
-        self.dummy_mode_checkbox.setEnabled(True)
+        # Dummy-Checkbox und Rauschstärke-Spinbox sollten immer aktiv sein, wenn Dummy-Modus ist
+        self.dummy_mode_checkbox.setEnabled(True) # Immer aktiv, um Modus zu wechseln
         self.dummy_noise_spinbox.setEnabled(self.dummy_mode_active) # Nur aktiv, wenn Dummy-Modus an
 
     def _update_dummy_noise_strength(self, value: int):
@@ -205,7 +213,6 @@ class SpectrumTab(QWidget):
         # Wenn Messung im Dummy-Modus läuft, sofort aktualisieren
         if self.spectrum_timer.isActive() and self.dummy_mode_active:
             self.update_spectrum()
-
 
     def _toggle_dummy_mode(self):
         """Schaltet den Dummy-Modus an/aus und aktualisiert den UI-Zustand."""
@@ -219,23 +226,23 @@ class SpectrumTab(QWidget):
             self.connect_button.setText("Verbinden (Dummy)")
             self.connect_button.setEnabled(True) # Dummy "Verbinden" Button muss klickbar sein
             # Erzwinge das Trennen, falls ein echtes Spektrometer verbunden war
-            if self.shared_data.spec and self.shared_data.spec != "DUMMY_SPEC_CONNECTED":
+            if self.shared_data.spectrometer_device and self.shared_data.spectrometer_device != "DUMMY_SPEC_CONNECTED":
                 self.close_device()
             # Aktiviere die Dummy-Steuerelemente
             self.integration_spinbox.setEnabled(True)
             self.set_integration_button.setEnabled(True)
             self.start_measurement_button.setEnabled(True)
             # Simuliere eine "Verbindung" zum Dummy
-            self.shared_data.spec = "DUMMY_SPEC_CONNECTED" # Einfacher String als Indikator
+            self.shared_data.spectrometer_device = "DUMMY_SPEC_CONNECTED" # Einfacher String als Indikator
             self._log_message("Dummy-Spektrometer verbunden.")
 
         else:
             self._log_message("Dummy-Modus deaktiviert. Versuche, echte Geräte zu erkennen.")
             # Trenne das Dummy-Spektrometer
-            if self.shared_data.spec == "DUMMY_SPEC_CONNECTED":
+            if self.shared_data.spectrometer_device == "DUMMY_SPEC_CONNECTED":
                 self.spectrum_timer.stop()
                 self.start_measurement_button.setText("Messung starten")
-                self.shared_data.spec = None
+                self.shared_data.spectrometer_device = None
                 self._log_message("Dummy-Spektrometer getrennt.")
                 # Plot zurücksetzen, da jetzt nichts verbunden ist
                 self.ax.clear()
@@ -245,7 +252,6 @@ class SpectrumTab(QWidget):
                 self.ax.grid(True, linestyle='--', alpha=0.6)
                 self.canvas.draw()
 
-
             # Aktiviere echte Geräteauswahl und aktualisiere
             self.update_devices()
             # _set_controls_enabled kümmert sich um den Zustand basierend auf update_devices
@@ -253,7 +259,6 @@ class SpectrumTab(QWidget):
             if self.devices: # Wenn echte Geräte gefunden wurden, Verbinden-Button aktivieren
                 self.connect_button.setEnabled(True)
             self.connect_button.setText("Verbinden") # Standardtext
-
 
     def eventFilter(self, obj, event):
         """
@@ -300,22 +305,22 @@ class SpectrumTab(QWidget):
             index = self.device_combo.findText(current_selection_text)
             if index != -1:
                 self.device_combo.setCurrentIndex(index)
-            elif self.shared_data.spec and not self.dummy_mode_active: # Wenn ein echtes Gerät verbunden ist
-                connected_dev_str = f"{self.shared_data.spec.model} ({self.shared_data.spec.serial_number})"
+            # Wenn ein echtes Gerät verbunden ist und nicht im Dummy-Modus
+            elif self.shared_data.spectrometer_device and self.shared_data.spectrometer_device != "DUMMY_SPEC_CONNECTED" :
+                connected_dev_str = f"{self.shared_data.spectrometer_device.model} ({self.shared_data.spectrometer_device.serial_number})"
                 index = self.device_combo.findText(connected_dev_str)
                 if index != -1:
                     self.device_combo.setCurrentIndex(index)
-
 
     def toggle_device_connection(self):
         """Schaltet die Verbindung zum Spektrometer um (Verbinden/Trennen)."""
         if self.dummy_mode_active:
             # Im Dummy-Modus simulieren wir das Verbinden/Trennen
-            if self.shared_data.spec == "DUMMY_SPEC_CONNECTED":
+            if self.shared_data.spectrometer_device == "DUMMY_SPEC_CONNECTED":
                 self.close_device() # Nutze close_device, um den Zustand zurückzusetzen
             else:
                 # Simuliere das "Verbinden" des Dummy-Specs
-                self.shared_data.spec = "DUMMY_SPEC_CONNECTED"
+                self.shared_data.spectrometer_device = "DUMMY_SPEC_CONNECTED"
                 self.connect_button.setText("Trennen (Dummy)")
                 self._log_message("Dummy-Spektrometer 'verbunden'.")
                 # Aktiviere Steuerelemente für Dummy
@@ -325,11 +330,10 @@ class SpectrumTab(QWidget):
                 # Setze Integrationszeit zurück und Logge
                 self.integration_spinbox.setValue(self.integration_time_ms)
                 self._log_message(f"Integrationszeit (Dummy) auf {self.integration_time_ms} ms gesetzt.")
-
             return # Wichtig: Hier aufhören, um die echte Logik nicht auszuführen
 
         # Echte Geräte-Logik
-        if self.shared_data.spec is None:
+        if self.shared_data.spectrometer_device is None:
             self.open_device()
         else:
             self.close_device()
@@ -343,30 +347,29 @@ class SpectrumTab(QWidget):
             return
 
         try:
-            if self.shared_data.spec:
-                self.shared_data.spec.close()
-                self.shared_data.spec = None
+            if self.shared_data.spectrometer_device:
+                self.shared_data.spectrometer_device.close()
+                self.shared_data.spectrometer_device = None
 
-            self.shared_data.spec = Spectrometer(self.devices[index])
-            self._log_message(f"Gerät verbunden: {self.shared_data.spec.model} ({self.shared_data.spec.serial_number})")
+            self.shared_data.spectrometer_device = Spectrometer(self.devices[index])
+            self._log_message(f"Gerät verbunden: {self.shared_data.spectrometer_device.model} ({self.shared_data.spectrometer_device.serial_number})")
             self.connect_button.setText("Trennen")
             self._set_controls_enabled(True)
             self.dummy_mode_checkbox.setEnabled(True) # Dummy-Checkbox bleibt aktiv
             self.dummy_noise_spinbox.setEnabled(False) # Rauschstärke-Spinbox deaktivieren, da nicht im Dummy-Modus
 
             try:
-                self.shared_data.spec.integration_time_micros(self.integration_time_ms * 1000)
+                self.shared_data.spectrometer_device.integration_time_micros(self.integration_time_ms * 1000)
                 self._log_message(f"Integrationszeit auf {self.integration_time_ms} ms gesetzt (Standard).")
             except Exception as e:
                 self._log_message(f"Konnte Standard-Integrationszeit nicht setzen: {e}", level="WARNING")
 
         except Exception as e:
             self._log_message(f"Gerät konnte nicht geöffnet werden: {e}", level="ERROR")
-            self.shared_data.spec = None
+            self.shared_data.spectrometer_device = None
             self.connect_button.setText("Verbinden")
             self._set_controls_enabled(False) # Deaktiviere alle Steuerelemente
             self.dummy_mode_checkbox.setEnabled(True) # Dummy-Checkbox bleibt aktiv
-
 
     def close_device(self):
         """Schließt die Verbindung zum Spektrometer."""
@@ -377,8 +380,8 @@ class SpectrumTab(QWidget):
 
         # Wenn Dummy-Modus aktiv, behandle Dummy-Spektrometer
         if self.dummy_mode_active:
-            if self.shared_data.spec == "DUMMY_SPEC_CONNECTED":
-                self.shared_data.spec = None
+            if self.shared_data.spectrometer_device == "DUMMY_SPEC_CONNECTED":
+                self.shared_data.spectrometer_device = None
                 self.connect_button.setText("Verbinden (Dummy)")
                 self._log_message("Dummy-Spektrometer 'getrennt'.")
                 # Deaktiviere Mess- und Integrationszeit-Steuerung für Dummy
@@ -393,13 +396,12 @@ class SpectrumTab(QWidget):
             self.dummy_noise_spinbox.setEnabled(True) # Dummy-Rauschstärke bleibt aktiv
             self._log_message("Plot zurückgesetzt (Dummy-Modus deaktiviert oder getrennt).")
 
-
         # Wenn echter Spektrometer verbunden
-        elif self.shared_data.spec:
+        elif self.shared_data.spectrometer_device:
             try:
-                self.shared_data.spec.close()
-                self._log_message(f"Gerät getrennt: {self.shared_data.spec.model}")
-                self.shared_data.spec = None
+                self.shared_data.spectrometer_device.close()
+                self._log_message(f"Gerät getrennt: {self.shared_data.spectrometer_device.model}")
+                self.shared_data.spectrometer_device = None
                 self.connect_button.setText("Verbinden")
                 self._set_controls_enabled(False) # Deaktiviere alle Steuerelemente
                 self.dummy_mode_checkbox.setEnabled(True) # Dummy-Checkbox bleibt aktiv
@@ -418,10 +420,9 @@ class SpectrumTab(QWidget):
         self.ax.grid(True, linestyle='--', alpha=0.6)
         self.canvas.draw()
 
-
     def set_integration_time(self):
         """Stellt die Integrationszeit des Spektrometers ein."""
-        if self.shared_data.spec is None:
+        if self.shared_data.spectrometer_device is None:
             self._log_message("Zuerst ein Spektrometer verbinden!", level="WARNING")
             return
 
@@ -435,7 +436,7 @@ class SpectrumTab(QWidget):
         else:
             # Echte Logik
             try:
-                self.shared_data.spec.integration_time_micros(integration_time_ms * 1000)
+                self.shared_data.spectrometer_device.integration_time_micros(integration_time_ms * 1000)
                 self.integration_time_ms = integration_time_ms
                 self._log_message(f"Integrationszeit auf {integration_time_ms} ms gesetzt.")
             except Exception as e:
@@ -448,7 +449,7 @@ class SpectrumTab(QWidget):
             self.start_measurement_button.setText("Messung starten")
             self._log_message("Messung gestoppt.")
         else:
-            if self.shared_data.spec is None:
+            if self.shared_data.spectrometer_device is None:
                 self._log_message("Bitte zuerst ein Gerät verbinden!", level="WARNING")
                 return
             self._log_message("Messung gestartet.")
@@ -457,10 +458,12 @@ class SpectrumTab(QWidget):
             self.spectrum_timer.start(self.integration_time_ms)
             self.start_measurement_button.setText("Messung stoppen")
 
-
     def update_spectrum(self):
-        """Holt die aktuellen Spektrumdaten und aktualisiert den Plot."""
-        if self.shared_data.spec is None:
+        """
+        Holt die aktuellen Spektrumdaten und aktualisiert den Plot.
+        Aktualisiert `shared_data.current_wavelengths` und `shared_data.current_intensities`.
+        """
+        if self.shared_data.spectrometer_device is None:
             self.spectrum_timer.stop()
             self.start_measurement_button.setText("Messung starten")
             self._log_message("Messung automatisch gestoppt: Spektrometer nicht mehr verbunden.", level="WARNING")
@@ -468,22 +471,24 @@ class SpectrumTab(QWidget):
 
         if self.dummy_mode_active:
             wavelengths, intensities = self._generate_dummy_spectrum()
-            self.shared_data.intensities = intensities
-            self.shared_data.wavelengths = wavelengths
+            # Regel 1.4: Direkter Zugriff für flüchtige/temporäre Messdaten ist erlaubt
+            self.shared_data.current_intensities = intensities
+            self.shared_data.current_wavelengths = wavelengths
         else:
             # Echte Spektrometer-Logik
             try:
-                intensities = self.shared_data.spec.intensities()
-                wavelengths = self.shared_data.spec.wavelengths()
+                intensities = self.shared_data.spectrometer_device.intensities()
+                wavelengths = self.shared_data.spectrometer_device.wavelengths()
 
-                self.shared_data.intensities = intensities
-                self.shared_data.wavelengths = wavelengths
+                # Regel 1.4: Direkter Zugriff für flüchtige/temporäre Messdaten ist erlaubt
+                self.shared_data.current_intensities = intensities
+                self.shared_data.current_wavelengths = wavelengths
 
             except Exception as e:
                 self.spectrum_timer.stop()
                 self.start_measurement_button.setText("Messung starten")
                 self._log_message(f"Messung fehlgeschlagen: {e}", level="ERROR")
-                self.shared_data.spec = None
+                self.shared_data.spectrometer_device = None
                 self.connect_button.setText("Verbinden")
                 self._set_controls_enabled(False)
                 self.dummy_mode_checkbox.setEnabled(True) # Dummy-Checkbox bleibt aktiv
@@ -534,31 +539,14 @@ class SpectrumTab(QWidget):
         intensities += baseline
 
         # Überlagertes Rauschen basierend auf Integrationszeit und einstellbarer Stärke
-        # Skalierung: Bei kurzer Integrationszeit (z.B. 20ms) soll das Rauschen stärker sein,
-        # bei langer Integrationszeit (z.B. 1000ms) soll es geringer sein.
-        # Eine inverse Beziehung, z.B. 1/sqrt(integration_time) ist oft realistisch für Schrotrauschen.
-        # Hier verwenden wir eine logarithmisch-inverse Skalierung, um den Effekt zu betonen.
-        # Wir wollen einen deutlichen Unterschied zwischen 20ms (viel Rauschen) und 1000ms (wenig Rauschen).
-        # Eine einfache lineare Abnahme des Rauschfaktors mit der Integrationszeit (im Verhältnis zu einem Referenzwert)
-        # und einer Basis-Rauschkomponente, die immer vorhanden ist.
-
-        # Normalize integration time relative to a baseline (e.g., 100ms)
-        # Max noise at 20ms, min noise at 10000ms (max spinbox value)
         min_integration_time = 20 # ms (earliest time where noise is high)
         max_integration_time = 10000 # ms (latest time where noise is low)
 
-        # Calculate a noise factor that decreases as integration time increases
-        # Using a clamped linear inverse, or more smoothly:
         if self.integration_time_ms <= min_integration_time:
             noise_factor_integration = 1.0 # Max noise at or below min_integration_time
         else:
-            # Interpolate between 1.0 and 0.1 (or less) as time increases
-            # We want noise to decrease, e.g., from 1.0 at 20ms to 0.1 at 1000ms, and even less for 10000ms
-            # Using a reciprocal scaling: factor = (min_time / current_time) ^ power
-            # For 1/sqrt(t) like behavior, power = 0.5
             noise_factor_integration = (min_integration_time / self.integration_time_ms)**0.7
             noise_factor_integration = max(0.05, noise_factor_integration) # Clamp minimum noise factor
-
 
         # Die einstellbare Rauschstärke multipliziert den Rauschfaktor
         final_noise_amplitude = self.dummy_noise_strength * noise_factor_integration
