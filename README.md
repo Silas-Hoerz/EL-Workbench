@@ -6,7 +6,7 @@
 
 **English version below**
 
-Modulare Python-Plattform zur Ansteuerung von Laborgeräten und zur Auswertung von Messdaten – hauptsächlich für Elektrolumineszenz-Messplätze entwickelt.
+Modulare Python-Plattform zur Ansteuerung von Laborgeräten und zur Auswertung von Messdaten – hauptsächlich für Elektrolumineszenz-Messplatz entwickelt.
 
 ---
 
@@ -14,7 +14,7 @@ Modulare Python-Plattform zur Ansteuerung von Laborgeräten und zur Auswertung v
 
 Diese Dokumentation richtet sich an alle, die das System mit eigenen Funktionen, Geräteanbindungen oder Analysemodulen ausbauen möchten – egal ob für Studienarbeiten, Forschung oder Laborexperimente.
 
-### 🏛️ Architektur: Das `SharedState`-Konzept
+### Architektur: Das `SharedState`-Konzept
 
 Zentrales Element ist ein `SharedState`-Objekt – quasi die gemeinsame Daten- und Funktionsdrehscheibe. Es wird beim Start erzeugt und steht allen Modulen (Tabs) zur Verfügung.
 
@@ -25,7 +25,7 @@ Zwei Hauptaufgaben übernimmt dieses Objekt:
 
 Das Ergebnis: Ein klar strukturiertes, modular erweiterbares System im Stil von Producer/Consumer.
 
-### 🚀 Neues Modul in 4 Schritten
+### Neues Modul in 4 Schritten
 
 So lässt sich ein eigener Tab in wenigen Schritten ergänzen.
 
@@ -131,7 +131,7 @@ Fertig! Beim nächsten Start ist der neue Tab aktiv und vollständig ins System 
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
-Modular Python platform for controlling lab equipment and evaluating measurement data – mainly designed for electroluminescence test benches.
+Modular Python platform for controlling lab equipment and evaluating measurement data – mainly designed for electroluminescence test bench.
 
 ---
 
@@ -139,7 +139,7 @@ Modular Python platform for controlling lab equipment and evaluating measurement
 
 This guide provides a starting point for extending the platform with new devices, routines, or logic modules – useful for research, experiments, or academic projects.
 
-### 🏛️ Architecture: The `SharedState` Concept
+### Architecture: The `SharedState` Concept
 
 At the core of the system is a central `SharedState` object – a common data and function hub created once and passed to all modules.
 
@@ -150,7 +150,7 @@ It serves two key purposes:
 
 This approach follows a clean producer/consumer pattern and keeps the architecture highly modular.
 
-### 🚀 Create a Custom Module (4 Steps)
+### Create a Custom Module (4 Steps)
 
 Add a new tab with minimal setup effort:
 

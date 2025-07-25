@@ -23,6 +23,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(__file__))
 
+
 import numpy as np
 from PyQt6.QtWidgets import QApplication, QMainWindow, QTabWidget
 
@@ -32,13 +33,14 @@ __version__ = "1.0.0"
 
 
 # from styles.dark_theme import DARK_STYLESHEET
-
+from tabs.profile_tab import ProfileTab
 from tabs.spectrum_tab import SpectrumTab
 from tabs.smu_tab import SmuTab
 from tabs.sweep_tab import SweepTab
 from tabs.settings_tab import SettingsTab
 
 from tabs.beispiel_tab import BeispielTab
+
 # HIER NEUE MODULE IMPORTIEREN
 # from tabs.kennlinien_messung_tab import KennlinienMessungTab
 
@@ -48,6 +50,10 @@ class SharedState:
     Eine Instanz dieser Klasse wird an jedes Modul übergeben.
     """
     def __init__(self):
+
+        #Das aktuell geladene Profil
+        self.current_profile = None 
+
         # Hier werden die Geräte-Objekte gespeichert
         self.spec = None
         
@@ -82,6 +88,10 @@ class MainWindow(QMainWindow):
     def load_modules(self):
         """Erstellt die Instanzen der einzelnen Module und fügt sie den Tabs hinzu."""
         
+        # User Tab
+        self.profile_tab_widget = ProfileTab(self.shared_data)
+        self.tabs.addTab(self.profile_tab_widget, "Profile")
+
         # Spektrometer-Modul
         self.spectrum_tab_widget = SpectrumTab(self.shared_data)
         self.tabs.addTab(self.spectrum_tab_widget, "Spektrometer")
