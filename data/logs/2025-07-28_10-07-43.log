@@ -1,0 +1,20 @@
+Log gestartet: 2025-07-28T10:07:43.029151
+[2025-07-28 10:07:43] Info: Anwendung gestartet.
+[2025-07-28 10:07:43] Info: 1 Profile geladen.https://chatgpt.com/
+[2025-07-28 10:07:43] Info: Gerätetabelle geleert.
+[2025-07-28 10:07:43] Info: 1 Geräte geladen.
+[2025-07-28 10:07:43] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-28 10:07:43] Info: Gerät 'PIB 80' ausgewählt.
+[2025-07-28 10:07:43] Info: Zuletzt verwendetes Gerät 'PIB 80' automatisch ausgewählt.
+[2025-07-28 10:07:43] Info: Profil 'Default-Profil' geladen.
+[2025-07-28 10:07:57] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-28 10:07:57] Info: Gerät 'PIB 80' ausgewählt.
+[2025-07-28 10:08:08] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-28 10:08:08] Info: Gerätetabelle geleert.
+[2025-07-28 10:08:08] Info: 2 Geräte geladen.
+[2025-07-28 10:08:08] Info: Gerät '123' wurde erfolgreich hinzugefügt.
+[2025-07-28 10:08:08] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-28 10:08:08] Info: Gerät '123' ausgewählt.
+[2025-07-28 10:08:08] Info: Gerät mit UUID 'e49924a1-fc6b-47cb-8169-c59611bbeda0' ausgewählt.
+[2025-07-28 10:08:21] Warnung: Profilname darf nicht leer sein.
+[2025-07-28 10:08:25] Info: Profil hinzufügen abgebrochen.

@@ -1,0 +1,29 @@
+{
+    "id": "67676a1b-bb07-4656-8c42-8e96bad928af",
+    "name": "Default-Profil",
+    "storage_location": "",
+    "last_sample_id": "",
+    "devices": [
+        {
+            "device_name": "PIB 80",
+            "shape_type": "circle",
+            "custom_area_enabled": false,
+            "uuid": "d31abac6-155b-4beb-a572-63bba9b9bc7d",
+            "radius": 9.999999999999999e-05,
+            "width": 0.0,
+            "length": 0.0,
+            "Area": 3.141592653589793e-08
+        },
+        {
+            "device_name": "123",
+            "shape_type": "circle",
+            "custom_area_enabled": false,
+            "uuid": "e49924a1-fc6b-47cb-8169-c59611bbeda0",
+            "radius": 1.2e-05,
+            "width": 0.0,
+            "length": 0.0,
+            "Area": 4.523893421169302e-10
+        }
+    ],
+    "last_selected_device_uuid": "d31abac6-155b-4beb-a572-63bba9b9bc7d"
+}

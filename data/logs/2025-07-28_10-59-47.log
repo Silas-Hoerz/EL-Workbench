@@ -1,0 +1,25 @@
+Log gestartet: 2025-07-28T10:59:47.168010
+[2025-07-28 10:59:47] Info: Anwendung gestartet.
+[2025-07-28 10:59:47] Info: 1 Profile geladen.
+[2025-07-28 10:59:47] Info: Gerätetabelle geleert.
+[2025-07-28 10:59:47] Info: 2 Geräte geladen.
+[2025-07-28 10:59:47] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-28 10:59:47] Info: Gerät '123' ausgewählt.
+[2025-07-28 10:59:47] Info: Zuletzt verwendetes Gerät '123' automatisch ausgewählt.
+[2025-07-28 10:59:47] Info: Profil 'Default-Profil' geladen.
+[2025-07-28 11:00:04] Info: Profil 'sdfsd' erfolgreich erstellt.
+[2025-07-28 11:00:04] Info: Gerätetabelle geleert.
+[2025-07-28 11:00:04] Info: 0 Geräte geladen.
+[2025-07-28 11:00:04] Info: Profil 'sdfsd' gespeichert.
+[2025-07-28 11:00:04] Info: Keine Geräte im aktuellen Profil vorhanden.
+[2025-07-28 11:00:04] Info: Profil 'sdfsd' geladen.
+[2025-07-28 11:00:04] Info: Profil 'sdfsd' ausgewählt.
+[2025-07-28 11:00:16] Info: Profil 'sdfsd' gespeichert.
+[2025-07-28 11:00:16] Info: Gerätetabelle geleert.
+[2025-07-28 11:00:16] Info: 1 Geräte geladen.
+[2025-07-28 11:00:16] Info: Gerät 'sdfs' wurde erfolgreich hinzugefügt.
+[2025-07-28 11:00:16] Info: Profil 'sdfsd' gespeichert.
+[2025-07-28 11:00:16] Info: Gerät 'sdfs' ausgewählt.
+[2025-07-28 11:00:16] Info: Gerät mit UUID '589e6e0d-e3c4-48f2-83cc-3cf563853621' ausgewählt.
+[2025-07-28 11:03:27] Info: Profil 'sdfsd' gespeichert.
+[2025-07-28 11:03:27] Info: Profil-Attribut 'last_sample_id' zu '' aktualisiert.

@@ -1,0 +1,13 @@
+Log gestartet: 2025-07-29T16:15:22.370841
+[2025-07-29 16:15:22] Info: Beispiel-Tab erfolgreich initialisiert
+[2025-07-29 16:15:22] Info: EL-Workbench v1.1.0 erfolgreich gestartet
+[2025-07-29 16:15:22] Info: 2 Profile geladen.
+[2025-07-29 16:15:22] Info: Gerätetabelle geleert.
+[2025-07-29 16:15:22] Info: 2 Geräte geladen.
+[2025-07-29 16:15:22] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-29 16:15:22] Info: Gerät 'PIB 80' ausgewählt.
+[2025-07-29 16:15:22] Info: Zuletzt verwendetes Gerät 'PIB 80' automatisch ausgewählt.
+[2025-07-29 16:15:22] Info: Profil 'Default-Profil' geladen.
+[2025-07-29 16:15:31] Info: Dies ist eine Informationsmeldung vom Beispiel-Tab
+[2025-07-29 16:15:34] Warnung: Dies ist eine Warnmeldung - etwas könnte Aufmerksamkeit benötigen
+[2025-07-29 16:15:35] FEHLER: Dies ist eine Fehlermeldung - etwas ist schiefgelaufen
