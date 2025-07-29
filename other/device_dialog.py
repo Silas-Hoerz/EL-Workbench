@@ -318,15 +318,17 @@ class DeviceDialog(QDialog):
 
         # Buttons
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        
+        save_button = button_box.button(QDialogButtonBox.StandardButton.Save)
+        if save_button:
+            save_button.setText("Speichern") # Change "Save" to "Speichern"
+
+        cancel_button = button_box.button(QDialogButtonBox.StandardButton.Cancel)
+        if cancel_button:
+            cancel_button.setText("Abbrechen") # Change "Cancel" to "Abbrechen"
+    
         button_box.accepted.connect(self._accept_dialog) # Changed to _accept_dialog
         button_box.rejected.connect(self.reject)
-
-        self.delete_button = QPushButton("Gerät löschen")
-        self.delete_button.clicked.connect(self._confirm_delete) # Changed to _confirm_delete
-        if self._device_data_um.get("uuid") and self.original_device_name: # Only show delete for existing devices
-            button_box.addButton(self.delete_button, QDialogButtonBox.ButtonRole.DestructiveRole)
-        else:
-            self.delete_button.hide()
   
         form_layout.addWidget(button_box)
         main_layout.addWidget(form_widget,1)

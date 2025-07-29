@@ -1,0 +1,19 @@
+Log gestartet: 2025-07-29T17:30:12.341189
+[2025-07-29 17:30:12] Info: Beispiel-Tab erfolgreich initialisiert
+[2025-07-29 17:30:12] Info: EL-Workbench v1.1.0 erfolgreich gestartet
+[2025-07-29 17:30:12] Info: 1 Profile geladen.
+[2025-07-29 17:30:12] Info: Geometrietabelle geleert.
+[2025-07-29 17:30:12] Info: 2 Geometrie geladen.
+[2025-07-29 17:30:12] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-29 17:30:12] Info: Geometrie 'PIB 80' ausgewählt.
+[2025-07-29 17:30:12] Info: Zuletzt verwendetes Geometrie 'PIB 80' automatisch ausgewählt.
+[2025-07-29 17:30:12] Info: Profil 'Default-Profil' geladen.
+[2025-07-29 17:30:14] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-29 17:30:14] Info: Geometrie '123' ausgewählt.
+[2025-07-29 17:30:19] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-29 17:30:19] Info: Geometrie 'PIB 80' ausgewählt.
+[2025-07-29 17:30:25] Info: Geometrie hinzufügen abgebrochen.
+[2025-07-29 17:30:26] Info: Profil 'Default-Profil' gespeichert.
+[2025-07-29 17:30:26] Info: Geometrie '123' ausgewählt.
+[2025-07-29 17:30:30] Info: Geometrie bearbeiten abgebrochen.
+[2025-07-29 17:30:40] FEHLER: Geometrie nicht gefunden oder konnte nicht gelöscht werden.

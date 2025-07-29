@@ -182,9 +182,11 @@ class InfoWidget(QWidget):
 
         # Profil- und Geräte-Tags
         self.profile_tag = QLabel("Profil: unbekannt")
+        self.probe_tag = QLabel("Probe: unbekannt")
         self.device_tag = QLabel("Device: unbekannt")
+        
 
-        for tag in (self.profile_tag, self.device_tag):
+        for tag in (self.profile_tag, self.device_tag, self.probe_tag):
             tag.setStyleSheet("""
                 background-color: #3a3f4b;
                 color: #d6d6d6;
@@ -204,6 +206,7 @@ class InfoWidget(QWidget):
         top_layout.addWidget(self.message_label)
         top_layout.addStretch(1)
         top_layout.addWidget(self.profile_tag)
+        top_layout.addWidget(self.probe_tag)
         top_layout.addWidget(self.device_tag)
         
 
@@ -272,9 +275,14 @@ class InfoWidget(QWidget):
         if self.shared_data.current_profile:
             profile_name = self.shared_data.current_profile.get("name", "Unbekanntes Profil")
 
-        device_name = "Kein Gerät"
+        device_name = "Keine Geometrie"
         if self.shared_data.current_device:
-            device_name = self.shared_data.current_device.get("device_name", "Unbekanntes Gerät")
+            device_name = self.shared_data.current_device.get("device_name", "Unbekannte Geometrie")
+
+        probe_name = "Keine Probe"
+        if self.shared_data.current_profile:
+            probe_name = self.shared_data.current_profile.get("last_sample_id", "Unbekannte Probe")
 
         self.profile_tag.setText(f"Profil: {profile_name}")
-        self.device_tag.setText(f"Device: {device_name}")
+        self.device_tag.setText(f"Geometrie: {device_name}")
+        self.probe_tag.setText(f"Probe: {probe_name}")

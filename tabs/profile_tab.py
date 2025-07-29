@@ -2,14 +2,23 @@
 # -*- coding: utf-8 -*-
 """
 ============================================================================
- File:          profile_tab.py
- Author:        Silas Hörz
- Creation date: 2025-07-25
- Last modified: 2025-07-28 (Adapted for direct SharedState usage, refactored)
- Version:       1.1.0
+File:           profile_tab.py
+Author:         Silas Hörz
+Creation date:  2025-07-25
+Last modified:  2025-07-29
+Version:        1.1.0
 ============================================================================
- Description:
-    Modul (Tab) für das Anlegen, Laden und Speichern von Profilen.
+Description:
+    Modul (Tab) für das Anlegen, Laden und Speichern von Profilen und zugehörigen Geometrien.
+    Verwaltet Profileigenschaften und Geometriedaten direkt über SharedData.
+============================================================================
+Change Log:
+- 2025-07-25: Initialversion erstellt.
+- 2025-07-28: Für direkte SharedData-Nutzung angepasst, refaktoriert.
+- 2025-07-29: Entfernung der dynamischen Attribut-Sektion, Anpassung an feste Profilattribute.
+              Ersetzung von QGroupBox durch QLabel in der UI.
+              Aktualisierung der Header und Sprachkonventionen (Code Englisch, UI/Kommentare Deutsch).
+              Hinzufügen eines Buttons zum Auswählen eines Speicherorts über den Dateiexplorer.
 ============================================================================
 """
 
@@ -20,60 +29,67 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QTableWidget, QTableWidgetItem, QAbstractItemView,
     QLineEdit, QMessageBox, QInputDialog, QLabel,
-    QDialog, QGroupBox, QHeaderView, QMenu, QSizePolicy
+    QDialog, QHeaderView, QMenu, QSizePolicy, QFileDialog
 )
 from PyQt6.QtCore import QTimer, Qt, QSettings
 
-# Import the DeviceDialog and InfoManager.
+# Importiere DeviceDialog und InfoManager.
 from other.info import InfoManager
 from other.device_dialog import DeviceDialog
 
-# --- Global Constants and Paths ---
+# --- Globale Konstanten und Pfade ---
+# Basisverzeichnis des Projekts.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Pfad zum Verzeichnis der Profildaten.
 PROFIL_DIR = os.path.join(BASE_DIR, "data/profiles")
+# Dateipfad für das zuletzt verwendete Profil.
 LAST_USED_PROFILE_FILE = os.path.join(PROFIL_DIR, "last_profile.json")
 
 # --- ProfileTab Class Definition ---
 class ProfileTab(QWidget):
     """
-    Manages user profiles, including profile attributes and associated devices.
-    Provides functionality to add, edit, delete profiles and devices.
-    This class is primarily responsible for the UI and the underlying file operations.
-    It interacts directly with the SharedState object for data sharing.
+    Verwaltet Benutzerprofile, einschließlich Profilattribute und zugehöriger Geometrie.
+    Bietet Funktionen zum Hinzufügen, Bearbeiten und Löschen von Profilen und Geometrien.
+    Diese Klasse ist primär für die Benutzeroberfläche und die zugrunde liegenden Dateivorgänge verantwortlich.
+    Sie interagiert direkt mit dem SharedData-Objekt für den Datenaustausch.
     """
     def __init__(self, shared_data):
         """
-        Initializes the ProfileTab.
-        :param shared_data: An object to share data across different parts of the application.
-                            It should have attributes like .current_profile and .current_device.
+        Initialisiert den ProfileTab.
+        :param shared_data: Ein Objekt zum Teilen von Daten in der Anwendung.
+                            Es sollte Attribute wie .current_profile und .current_device haben.
         """
         super().__init__()
         self.shared_data = shared_data
-        self.profiles = {}  # Stores profile_id: {name: "...", path: "...", data: {...}}
-        self.current_profile_id = None # UUID of the currently selected profile
-        self.profile_widgets = {} # Stores QLineEdit widgets for dynamic profile attributes (e.g., storage_location, last_sample_id)
+        # Speichert Profile: profile_id: {name: "...", path: "...", data: {...}}
+        self.profiles = {}
+        # UUID des aktuell ausgewählten Profils.
+        self.current_profile_id = None
         
-        self.settings = QSettings("EL-Workbench", "ProfileTab") # QSettings is used for persistent application settings, not profile data
+        # QSettings wird für persistente Anwendungseinstellungen verwendet, nicht für Profildaten.
+        self.settings = QSettings("EL-Workbench", "ProfileTab")
 
         self.init_ui()
-        QTimer.singleShot(0, self.load_profiles) # Defer loading until UI is shown
+        # Verzögert das Laden der Profile, bis die UI angezeigt wird.
+        QTimer.singleShot(0, self.load_profiles)
 
-    # --- UI Initialization ---
+    # --- UI Initialisierung ---
     def init_ui(self):
-        """Initializes the user interface elements for the ProfileTab."""
+        """Initialisiert die Benutzeroberflächenelemente für den ProfileTab."""
         main_layout = QHBoxLayout(self)
 
-        # Left Panel: Profile Management (Table and Add Button)
+        # Linker Bereich: Profilverwaltung (Tabelle und Hinzufügen-Button)
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
 
-        self.button_profile = QPushButton("Profil hinzufügen")
-        self.button_profile.clicked.connect(self.add_profile)
-        self.button_profile.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        # Label als Überschrift für den Profilbereich
+        self.button_add_profile = QPushButton("Profil hinzufügen")
+        self.button_add_profile.clicked.connect(self.add_profile)
+        self.button_add_profile.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         
         button_layout_add_profile = QHBoxLayout()
         button_layout_add_profile.addStretch(1)
-        button_layout_add_profile.addWidget(self.button_profile)
+        button_layout_add_profile.addWidget(self.button_add_profile)
         button_layout_add_profile.addStretch(1)
         left_layout.addLayout(button_layout_add_profile)
 
@@ -88,46 +104,55 @@ class ProfileTab(QWidget):
         self.profile_table.setMinimumWidth(150)
         left_layout.addWidget(self.profile_table)
 
-        # Right Panel: Profile Attributes & Device Management
+        # Rechter Bereich: Profilattribute & Geometrieverwaltung
         right_widget = QWidget()
         right_layout = QVBoxLayout(right_widget)
 
-        # Profile Name & Directory
-        profile_attr_group = QGroupBox("Profil Details")
-        profile_attr_layout = QVBoxLayout(profile_attr_group)
+        # Profilname & Verzeichnis
+        profile_attr_layout = QVBoxLayout()
         
-        self.label_name = QLabel("Kein Profil ausgewählt") # Initial text
-        self.label_name.setObjectName("Title") # For potential CSS styling
-        profile_attr_layout.addWidget(self.label_name)
+        self.label_profile_name_display = QLabel("Kein Profil ausgewählt") # Initialer Text, zeigt den Namen des ausgewählten Profils an
+        self.label_profile_name_display.setObjectName("Title") # Für potenzielle CSS-Styling
+        profile_attr_layout.addWidget(self.label_profile_name_display)
 
         profile_attr_layout.addWidget(QLabel("Name:"))
         self.name_field = QLineEdit()
         self.name_field.editingFinished.connect(self.save_profile_name_change)
         profile_attr_layout.addWidget(self.name_field)
 
+        # Speicherort mit Button
         profile_attr_layout.addWidget(QLabel("Speicherort:"))
+        storage_location_layout = QHBoxLayout()
         self.directory_field = QLineEdit()
-        self.directory_field.setReadOnly(True) # Directory field is read-only
-        profile_attr_layout.addWidget(self.directory_field)
+        self.directory_field.setReadOnly(True) # Das Verzeichnis-Feld ist schreibgeschützt
+        storage_location_layout.addWidget(self.directory_field)
+        self.button_select_directory = QPushButton("🖿")
+        self.button_select_directory.setStyleSheet("font-weight: bold; font-size: 16px;")
+        self.button_select_directory.clicked.connect(self._select_storage_location)
+        storage_location_layout.addWidget(self.button_select_directory)
+        profile_attr_layout.addLayout(storage_location_layout)
 
-        # Dynamic profile attributes section
-        self.profile_attributes_layout = QVBoxLayout()
-        profile_attr_layout.addLayout(self.profile_attributes_layout)
-
-        # Add predefined dynamic attributes (moved here for compactness)
-        self.add_profile_attribute_field("Letzte Probe ID", "last_sample_id")
+        # Festes Attribut: Letzte Probe ID
+        profile_attr_layout.addWidget(QLabel("Probe:"))
+        self.last_sample_id_field = QLineEdit()
+        self.last_sample_id_field.editingFinished.connect(self.save_last_sample_id_change)
+        profile_attr_layout.addWidget(self.last_sample_id_field)
         
-        right_layout.addWidget(profile_attr_group)
+        right_layout.addLayout(profile_attr_layout)
 
-        # Device Management Section
-        device_group = QGroupBox("Geräte")
-        device_layout = QVBoxLayout(device_group)
+        # Überschrift für Geometrieverwaltung
+        device_management_label = QLabel("Geometrie")
+        device_management_label.setStyleSheet("font-weight: bold; font-size: 16px; margin-top: 10px; margin-bottom: 5px;")
+        right_layout.addWidget(device_management_label)
 
-        self.device_table = QTableWidget(0, 1) # Only one visible column for name
-        self.device_table.setHorizontalHeaderLabels(["Gerätename"])
+        # Geometrieverwaltung Sektion
+        device_layout = QVBoxLayout()
+
+        self.device_table = QTableWidget(0, 1) # Nur eine sichtbare Spalte für den Namen
+        self.device_table.setHorizontalHeaderLabels(["Geometrie"])
         self.device_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         self.device_table.verticalHeader().setVisible(False)
-        self.device_table.horizontalHeader().setVisible(False) # Hide header as per original
+        self.device_table.horizontalHeader().setVisible(False) # Header ausblenden wie ursprünglich
         self.device_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.device_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.device_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -138,15 +163,15 @@ class ProfileTab(QWidget):
         device_layout.addWidget(self.device_table)
 
         button_layout_add_device = QHBoxLayout()
-        self.button_add_device = QPushButton("Gerät hinzufügen")
+        self.button_add_device = QPushButton("Neue Geometrie")
         self.button_add_device.clicked.connect(self.add_device)
         button_layout_add_device.addWidget(self.button_add_device)
         button_layout_add_device.addStretch(1)
         device_layout.addLayout(button_layout_add_device)
         
-        right_layout.addWidget(device_group)
+        right_layout.addLayout(device_layout)
 
-        # Spacer and Delete Profile Button
+        # Spacer und Profil Löschen Button
         right_layout.addStretch()
 
         delete_button_layout = QHBoxLayout()
@@ -159,27 +184,13 @@ class ProfileTab(QWidget):
         main_layout.addWidget(left_widget, 1)
         main_layout.addWidget(right_widget, 3)
 
-    def add_profile_attribute_field(self, label_text, attribute_key):
-        """
-        Adds a QLabel and QLineEdit for a profile attribute to the UI.
-        The QLineEdit's 'editingFinished' signal is connected to save the attribute.
-        """
-        h_layout = QHBoxLayout()
-        label = QLabel(label_text + ":")
-        line_edit = QLineEdit()
-        line_edit.editingFinished.connect(lambda: self._save_specific_profile_attribute(attribute_key, line_edit.text()))
-        h_layout.addWidget(label)
-        h_layout.addWidget(line_edit)
-        self.profile_attributes_layout.addLayout(h_layout)
-        self.profile_widgets[attribute_key] = line_edit
-
-    # --- Profile Management Methods ---
+    # --- Profilverwaltungsmethoden ---
     def generate_unique_id(self):
-        """Generates a globally unique identifier (UUID)."""
+        """Generiert eine global eindeutige Kennung (UUID)."""
         return str(uuid.uuid4())
 
     def add_profile(self):
-        """Prompts the user for a new profile name and creates the profile file and data."""
+        """Fordert den Benutzer zur Eingabe eines neuen Profilnamens auf und erstellt die Profil-Datei und -Daten."""
         while True:
             name, ok = QInputDialog.getText(self, "Neues Profil", "Profilnamen eingeben:")
             if not ok:
@@ -204,8 +215,8 @@ class ProfileTab(QWidget):
         new_profile_data = {
             "id": profile_id,
             "name": name,
-            "storage_location": os.path.join(PROFIL_DIR, name), # Default storage location within data/profiles
-            "last_sample_id": "",
+            "storage_location": os.path.join(PROFIL_DIR, name), # Standard-Speicherort innerhalb von data/profiles
+            "last_sample_id": "", # Initialisiert festes Attribut
             "devices": [],
             "last_selected_device_uuid": None
         }
@@ -228,7 +239,7 @@ class ProfileTab(QWidget):
         self.shared_data.info_manager.status(InfoManager.INFO, f"Profil '{name}' ausgewählt.")
 
     def _add_profile_to_table(self, profile_id, name):
-        """Adds a profile entry to the profile QTableWidget."""
+        """Fügt einen Profileintrag zur Profil-QTableWidget hinzu."""
         row_position = self.profile_table.rowCount()
         self.profile_table.insertRow(row_position)
         item = QTableWidgetItem(name)
@@ -237,14 +248,14 @@ class ProfileTab(QWidget):
         self.profile_table.viewport().update()
 
     def _get_profile_id_from_row(self, row):
-        """Retrieves the profile ID from a given row in the profile table."""
+        """Ruft die Profil-ID aus einer gegebenen Zeile in der Profiltabelle ab."""
         item = self.profile_table.item(row, 0)
         return item.data(Qt.ItemDataRole.UserRole) if item else None
 
     def on_profile_change(self, row, column=0):
         """
-        Handles profile selection changes in the profile table.
-        Updates UI fields, loads devices, and updates shared data.
+        Behandelt Änderungen der Profilauswahl in der Profiltabelle.
+        Aktualisiert UI-Felder, lädt Geometrie und aktualisiert SharedData.
         """
         profile_id = self._get_profile_id_from_row(row)
 
@@ -254,15 +265,15 @@ class ProfileTab(QWidget):
             if profile_info and "data" in profile_info:
                 profile_data = profile_info["data"]
                 self.name_field.setText(profile_data.get("name", ""))
-                self.label_name.setText(profile_data.get("name", ""))
+                self.label_profile_name_display.setText(profile_data.get("name", ""))
                 self.directory_field.setText(profile_data.get("storage_location", ""))
                 
-                for key, line_edit in self.profile_widgets.items():
-                    line_edit.setText(str(profile_data.get(key, "")))
+                # Aktualisiert das feste Attribut 'last_sample_id'
+                self.last_sample_id_field.setText(str(profile_data.get("last_sample_id", "")))
                 
                 self._save_last_used_profile(profile_data.get("name"))
                 
-                # Update shared_data directly
+                # Aktualisiert SharedData direkt
                 self.shared_data.current_profile = profile_data.copy()
                 self.shared_data.current_device = None
 
@@ -284,17 +295,16 @@ class ProfileTab(QWidget):
             self.shared_data.info_manager.status(InfoManager.INFO, "Kein Profil ausgewählt.")
 
     def _clear_profile_fields(self):
-        """Clears all displayed profile fields (UI) and internal state for current profile."""
+        """Löscht alle angezeigten Profilfelder (UI) und den internen Zustand für das aktuelle Profil."""
         self.name_field.clear()
-        self.label_name.clear()
+        self.label_profile_name_display.clear()
         self.directory_field.clear()
-        for line_edit in self.profile_widgets.values():
-            line_edit.clear()
+        self.last_sample_id_field.clear() # Löscht auch das Feld für 'last_sample_id'
         self.current_profile_id = None
         self._clear_device_table()
 
     def load_profiles(self):
-        """Loads all existing profiles from the profiles directory into memory and the UI table."""
+        """Lädt alle vorhandenen Profile aus dem Profilverzeichnis in den Speicher und die UI-Tabelle."""
         if not os.path.exists(PROFIL_DIR):
             os.makedirs(PROFIL_DIR)
             self.shared_data.info_manager.status(InfoManager.INFO, f"Profilverzeichnis '{PROFIL_DIR}' erstellt.")
@@ -311,10 +321,11 @@ class ProfileTab(QWidget):
                         profile_id = data.get("id")
                         name = data.get("name")
                         
-                        # Ensure essential keys exist
+                        # Sicherstellen, dass essentielle Schlüssel existieren
                         data.setdefault("devices", [])
                         data.setdefault("last_selected_device_uuid", None)
-                        data.setdefault("storage_location", os.path.join(PROFIL_DIR, name)) # Set default if missing
+                        data.setdefault("storage_location", os.path.join(PROFIL_DIR, name)) # Setzt Standard, falls fehlt
+                        data.setdefault("last_sample_id", "") # Setzt Standard für festes Attribut
 
                     if profile_id and name:
                         self.profiles[profile_id] = {"name": name, "path": path, "data": data}
@@ -332,8 +343,8 @@ class ProfileTab(QWidget):
 
     def _load_last_used_profile(self):
         """
-        Attempts to load and select the last used profile based on a stored name.
-        If not found or no profiles exist, selects the first profile or clears UI.
+        Versucht, das zuletzt verwendete Profil basierend auf einem gespeicherten Namen zu laden und auszuwählen.
+        Falls nicht gefunden oder keine Profile existieren, wählt es das erste Profil aus oder leert die UI.
         """
         last_used_profile_name = None
         if os.path.exists(LAST_USED_PROFILE_FILE):
@@ -370,7 +381,7 @@ class ProfileTab(QWidget):
                 self.shared_data.info_manager.status(InfoManager.INFO, "Veraltete 'last_profile.json' entfernt.")
 
     def _save_last_used_profile(self, profile_name):
-        """Saves the name of the currently active profile to a file."""
+        """Speichert den Namen des aktuell aktiven Profils in einer Datei."""
         try:
             with open(LAST_USED_PROFILE_FILE, "w") as f:
                 json.dump(profile_name, f)
@@ -378,14 +389,14 @@ class ProfileTab(QWidget):
             self.shared_data.info_manager.status(InfoManager.ERROR, f"Fehler beim Speichern des letzten verwendeten Profils: {e}")
 
     def _is_profile_name_unique(self, name, exclude_current_profile_id=None):
-        """Checks if a profile name is unique (case-insensitive) across all profiles."""
+        """Überprüft, ob ein Profilname eindeutig ist (Groß-/Kleinschreibung ignorierend) über alle Profile hinweg."""
         for profile_id, profile_info in self.profiles.items():
             if profile_info["name"].lower() == name.lower() and profile_id != exclude_current_profile_id:
                 return False
         return True
 
     def save_profile_name_change(self):
-        """Handles changes to the profile name field and updates the profile data."""
+        """Verarbeitet Änderungen im Profilnamensfeld und aktualisiert die Profildaten."""
         if not self.current_profile_id:
             return
 
@@ -400,14 +411,14 @@ class ProfileTab(QWidget):
             self.shared_data.info_manager.status(InfoManager.WARNING, "Profilname darf nicht leer sein. Alter Name wiederhergestellt.")
             QMessageBox.warning(self, "Fehler", "Profilname darf nicht leer sein. Der alte Name wird wiederhergestellt.")
             self.name_field.setText(old_name)
-            self.label_name.setText(old_name)
+            self.label_profile_name_display.setText(old_name)
             return
 
         if not self._is_profile_name_unique(new_name, exclude_current_profile_id=self.current_profile_id):
             self.shared_data.info_manager.status(InfoManager.WARNING, f"Profilname '{new_name}' existiert bereits. Alter Name wiederhergestellt.")
             QMessageBox.warning(self, "Fehler", f"Ein Profil mit dem Namen '{new_name}' existiert bereits. Der alte Name wird wiederhergestellt.")
             self.name_field.setText(old_name)
-            self.label_name.setText(old_name)
+            self.label_profile_name_display.setText(old_name)
             return
 
         current_profile_info["name"] = new_name
@@ -418,7 +429,7 @@ class ProfileTab(QWidget):
             item = self.profile_table.item(row, 0)
             if item and item.data(Qt.ItemDataRole.UserRole) == self.current_profile_id:
                 item.setText(new_name)
-                self.label_name.setText(new_name)
+                self.label_profile_name_display.setText(new_name)
                 break
         
         self._save_last_used_profile(new_name)
@@ -426,10 +437,9 @@ class ProfileTab(QWidget):
             self.shared_data.current_profile["name"] = new_name
         self.shared_data.info_manager.status(InfoManager.INFO, f"Profilname in '{new_name}' geändert.")
 
-    def _save_specific_profile_attribute(self, attribute_key, new_value):
+    def save_last_sample_id_change(self):
         """
-        Updates a specific attribute of the current profile and saves it.
-        This is a helper for dynamic QLineEdits.
+        Aktualisiert das Attribut 'last_sample_id' des aktuellen Profils und speichert es.
         """
         if not self.current_profile_id:
             return
@@ -438,16 +448,45 @@ class ProfileTab(QWidget):
         if not profile_info:
             return
 
+        new_value = self.last_sample_id_field.text().strip()
         profile_data = profile_info["data"]
-        profile_data[attribute_key] = new_value
+        profile_data["last_sample_id"] = new_value
         
-        self._save_current_profile_data() # Save the whole profile
-        self.shared_data.info_manager.status(InfoManager.INFO, f"Profil-Attribut '{attribute_key}' zu '{new_value}' aktualisiert.")
+        self._save_current_profile_data() # Speichert das gesamte Profil
+        self.shared_data.info_manager.status(InfoManager.INFO, f"Profil-Attribut 'Letzte Probe ID' zu '{new_value}' aktualisiert.")
+
+    def _select_storage_location(self):
+        """
+        Öffnet einen Dateidialog, um einen neuen Speicherort für das aktuelle Profil auszuwählen.
+        Aktualisiert das directory_field und speichert den Pfad im Profil.
+        """
+        if not self.current_profile_id:
+            self.shared_data.info_manager.status(InfoManager.INFO, "Bitte wählen Sie zuerst ein Profil aus, dessen Speicherort Sie ändern möchten.")
+            QMessageBox.information(self, "Hinweis", "Bitte wählen Sie zuerst ein Profil aus, dessen Speicherort Sie ändern möchten.")
+            return
+
+        current_path = self.directory_field.text() if self.directory_field.text() else os.path.expanduser("~")
+        
+        # Öffnet einen Dateidialog, um einen Ordner auszuwählen
+        new_dir = QFileDialog.getExistingDirectory(self, "Speicherort auswählen", current_path)
+
+        if new_dir: # Wenn ein Verzeichnis ausgewählt wurde (nicht abgebrochen)
+            self.directory_field.setText(new_dir)
+            profile_info = self.profiles.get(self.current_profile_id)
+            if profile_info:
+                profile_info["data"]["storage_location"] = new_dir
+                self._save_current_profile_data()
+                self.shared_data.info_manager.status(InfoManager.INFO, f"Speicherort für Profil '{profile_info['name']}' auf '{new_dir}' aktualisiert.")
+            else:
+                self.shared_data.info_manager.status(InfoManager.ERROR, "Fehler: Profilinformationen nicht gefunden, konnte Speicherort nicht aktualisieren.")
+        else:
+            self.shared_data.info_manager.status(InfoManager.INFO, "Auswahl des Speicherorts abgebrochen.")
+
 
     def _save_current_profile_data(self):
         """
-        Saves the current profile's data to its JSON file.
-        Also updates the shared_data object.
+        Speichert die Daten des aktuellen Profils in seiner JSON-Datei.
+        Aktualisiert auch das SharedData-Objekt.
         """
         if not self.current_profile_id:
             return
@@ -457,16 +496,17 @@ class ProfileTab(QWidget):
             return
 
         profile_data = profile_info["data"]
-        # Ensure name and storage_location are up-to-date from UI fields before saving
+        # Sicherstellen, dass Name, storage_location und last_sample_id aus UI-Feldern aktuell sind, bevor gespeichert wird
         profile_data["name"] = self.name_field.text().strip()
-        profile_data["storage_location"] = self.directory_field.text().strip() # This should be set elsewhere or directly reflect the file path
+        profile_data["storage_location"] = self.directory_field.text().strip()
+        profile_data["last_sample_id"] = self.last_sample_id_field.text().strip()
         
         try:
             with open(profile_info["path"], "w") as f:
                 json.dump(profile_data, f, indent=4)
             self.shared_data.info_manager.status(InfoManager.INFO, f"Profil '{profile_data['name']}' gespeichert.")
             
-            # Update shared_data with a copy of the saved data
+            # Aktualisiert SharedData mit einer Kopie der gespeicherten Daten
             if self.shared_data.current_profile and self.shared_data.current_profile.get("id") == self.current_profile_id:
                 self.shared_data.current_profile = profile_data.copy()
         except Exception as e:
@@ -474,7 +514,7 @@ class ProfileTab(QWidget):
             QMessageBox.critical(self, "Speichern Fehler", f"Fehler beim Speichern des Profils: {e}")
 
     def delete_profile(self):
-        """Deletes the currently selected profile and its associated file."""
+        """Löscht das aktuell ausgewählte Profil und seine zugehörige Datei."""
         if not self.current_profile_id:
             self.shared_data.info_manager.status(InfoManager.INFO, "Bitte wählen Sie ein Profil zum Löschen aus.")
             QMessageBox.information(self, "Hinweis", "Bitte wählen Sie ein Profil zum Löschen aus.")
@@ -508,7 +548,7 @@ class ProfileTab(QWidget):
                 self.shared_data.current_profile = None
                 self.shared_data.current_device = None
 
-                self._load_last_used_profile() # Try to load another profile
+                self._load_last_used_profile() # Versucht, ein anderes Profil zu laden
             except OSError as e:
                 self.shared_data.info_manager.status(InfoManager.ERROR, f"Fehler beim Löschen der Datei: {e}")
                 QMessageBox.critical(self, "Löschen Fehler", f"Fehler beim Löschen der Datei: {e}")
@@ -518,51 +558,50 @@ class ProfileTab(QWidget):
         else:
             self.shared_data.info_manager.status(InfoManager.INFO, f"Löschen von Profil '{profile_name}' abgebrochen.")
 
-    # --- Device Management Methods ---
+    # --- Geometriemanagement-Methoden ---
     def _clear_device_table(self):
-        """Clears all rows from the device table and unselects current device in shared data."""
+        """Löscht alle Zeilen aus der Geometrietabelle und hebt die Auswahl des aktuellen Geometries in SharedData auf."""
         self.device_table.setRowCount(0)
         self.shared_data.current_device = None
-        self.shared_data.info_manager.status(InfoManager.INFO, "Gerätetabelle geleert.")
+        self.shared_data.info_manager.status(InfoManager.INFO, "Geometrietabelle geleert.")
 
     def _load_devices_into_table(self, devices):
         """
-        Populates the device table with the given list of devices.
-        Ensures device data is stored in UserRole for later retrieval.
+        Füllt die Geometrietabelle mit der gegebenen Liste von Geometrien.
+        Stellt sicher, dass Geometriedaten für späteren Abruf in UserRole gespeichert werden.
         """
         self._clear_device_table()
         self.device_table.setRowCount(len(devices))
         for row, device in enumerate(devices):
-            name_item = QTableWidgetItem(device.get("device_name", "Unbekanntes Gerät"))
-            name_item.setData(Qt.ItemDataRole.UserRole, device) # Store full device dict
+            name_item = QTableWidgetItem(device.get("device_name", "Unbekanntes Geometrie"))
+            name_item.setData(Qt.ItemDataRole.UserRole, device) # Speichert das vollständige Geometrie-Dictionary
             self.device_table.setItem(row, 0, name_item)
-            # Removed column 1 (UUID) as it's hidden and not strictly needed for display
         self.device_table.viewport().update()
-        self.shared_data.info_manager.status(InfoManager.INFO, f"{len(devices)} Geräte geladen.")
+        self.shared_data.info_manager.status(InfoManager.INFO, f"{len(devices)} Geometrie geladen.")
 
     def _get_device_data_from_row(self, row):
-        """Retrieves the full device data dictionary from a given device table row's UserRole."""
+        """Ruft das vollständige Geometrie-Daten-Dictionary aus der UserRole einer gegebenen Geometrietabellenzeile ab."""
         item = self.device_table.item(row, 0)
         return item.data(Qt.ItemDataRole.UserRole) if item else None
 
     def on_device_selection_changed(self, row, column):
         """
-        Handles device selection in the device table.
-        Updates shared_data.current_device and saves the last selected device UUID.
+        Behandelt die Geometrieauswahl in der Geometrietabelle.
+        Aktualisiert shared_data.current_device und speichert die UUID des zuletzt ausgewählten Geometries.
         """
         device = self._get_device_data_from_row(row)
         if device:
             self.shared_data.current_device = device.copy()
             self._save_last_selected_device_in_profile(device.get("uuid"))
-            self.shared_data.info_manager.status(InfoManager.INFO, f"Gerät '{device.get('device_name')}' ausgewählt.")
+            self.shared_data.info_manager.status(InfoManager.INFO, f"Geometrie '{device.get('device_name')}' ausgewählt.")
         else:
             self.shared_data.current_device = None
             self._save_last_selected_device_in_profile(None)
-            self.shared_data.info_manager.status(InfoManager.INFO, "Kein Gerät ausgewählt oder Gerätedaten nicht gefunden.")
+            self.shared_data.info_manager.status(InfoManager.INFO, "Kein Geometrie ausgewählt oder Geometriedaten nicht gefunden.")
 
     def _select_last_used_device_in_profile(self):
         """
-        Selects the last used device in the currently active profile, if available.
+        Wählt das zuletzt verwendete Geometrie im aktuell aktiven Profil aus, falls verfügbar.
         """
         if not self.current_profile_id:
             return
@@ -576,22 +615,22 @@ class ProfileTab(QWidget):
                 if device and device.get("uuid") == last_selected_uuid:
                     self.device_table.selectRow(row)
                     self.on_device_selection_changed(row, 0)
-                    self.shared_data.info_manager.status(InfoManager.INFO, f"Zuletzt verwendetes Gerät '{device.get('device_name')}' automatisch ausgewählt.")
+                    self.shared_data.info_manager.status(InfoManager.INFO, f"Zuletzt verwendetes Geometrie '{device.get('device_name')}' automatisch ausgewählt.")
                     return
-            self.shared_data.info_manager.status(InfoManager.WARNING, "Zuletzt verwendetes Gerät im Profil nicht gefunden.")
+            self.shared_data.info_manager.status(InfoManager.WARNING, "Zuletzt verwendetes Geometrie im Profil nicht gefunden.")
         
         if self.device_table.rowCount() > 0:
             self.device_table.selectRow(0)
             self.on_device_selection_changed(0, 0)
-            self.shared_data.info_manager.status(InfoManager.INFO, "Kein zuletzt verwendetes Gerät, erstes Gerät ausgewählt.")
+            self.shared_data.info_manager.status(InfoManager.INFO, "Kein zuletzt verwendetes Geometrie, erstes Geometrie ausgewählt.")
         else:
             self.shared_data.current_device = None
             self._save_last_selected_device_in_profile(None)
-            self.shared_data.info_manager.status(InfoManager.INFO, "Keine Geräte im aktuellen Profil vorhanden.")
+            self.shared_data.info_manager.status(InfoManager.INFO, "Keine Geometrie im aktuellen Profil vorhanden.")
 
     def _save_last_selected_device_in_profile(self, device_uuid):
         """
-        Saves the UUID of the last selected device within the current profile's data.
+        Speichert die UUID des zuletzt ausgewählten Geometries in den Daten des aktuellen Profils.
         """
         if self.current_profile_id:
             profile_data = self.profiles[self.current_profile_id]["data"]
@@ -599,10 +638,10 @@ class ProfileTab(QWidget):
             self._save_current_profile_data()
 
     def add_device(self):
-        """Opens a dialog to add a new device to the currently selected profile."""
+        """Öffnet einen Dialog, um ein neues Geometrie zum aktuell ausgewählten Profil hinzuzufügen."""
         if not self.current_profile_id:
-            self.shared_data.info_manager.status(InfoManager.INFO, "Bitte wählen Sie zuerst ein Profil aus, dem Sie ein Gerät hinzufügen möchten.")
-            QMessageBox.information(self, "Hinweis", "Bitte wählen Sie zuerst ein Profil aus, dem Sie ein Gerät hinzufügen möchten.")
+            self.shared_data.info_manager.status(InfoManager.INFO, "Bitte wählen Sie zuerst ein Profil aus, dem Sie ein Geometrie hinzufügen möchten.")
+            QMessageBox.information(self, "Hinweis", "Bitte wählen Sie zuerst ein Profil aus, dem Sie ein Geometrie hinzufügen möchten.")
             return
 
         current_profile_data = self.profiles[self.current_profile_id]["data"]
@@ -616,21 +655,21 @@ class ProfileTab(QWidget):
             
             self._save_current_profile_data()
             self._load_devices_into_table(current_profile_data["devices"])
-            self.shared_data.info_manager.status(InfoManager.INFO, f"Gerät '{new_device_data['device_name']}' wurde erfolgreich hinzugefügt.")
+            self.shared_data.info_manager.status(InfoManager.INFO, f"Geometrie '{new_device_data['device_name']}' wurde erfolgreich hinzugefügt.")
             
             self._select_device_by_uuid(new_device_data.get("uuid"))
         else:
-            self.shared_data.info_manager.status(InfoManager.INFO, "Gerät hinzufügen abgebrochen.")
+            self.shared_data.info_manager.status(InfoManager.INFO, "Geometrie hinzufügen abgebrochen.")
 
     def edit_device_from_table(self, row, column):
-        """Opens a dialog to edit the device at the given row in the device table."""
+        """Öffnet einen Dialog, um das Geometrie in der gegebenen Zeile der Geometrietabelle zu bearbeiten."""
         if not self.current_profile_id:
-            self.shared_data.info_manager.status(InfoManager.WARNING, "Kein Profil zum Bearbeiten eines Geräts ausgewählt.")
+            self.shared_data.info_manager.status(InfoManager.WARNING, "Kein Profil zum Bearbeiten eines Geometries ausgewählt.")
             return
 
         device_to_edit = self._get_device_data_from_row(row)
         if not device_to_edit:
-            self.shared_data.info_manager.status(InfoManager.WARNING, "Kein Gerät in der Zeile gefunden.")
+            self.shared_data.info_manager.status(InfoManager.WARNING, "Kein Geometrie in der Zeile gefunden.")
             return
 
         current_profile_data = self.profiles[self.current_profile_id]["data"]
@@ -641,51 +680,56 @@ class ProfileTab(QWidget):
         if dialog.exec() == QDialog.DialogCode.Accepted:
             updated_device_data = dialog.device_data
             
-            device_found = False
-            for i, device in enumerate(current_profile_data["devices"]):
-                if device.get("uuid") == updated_device_data.get("uuid"):
-                    current_profile_data["devices"][i] = updated_device_data
-                    device_found = True
+            # Findet den Index des zu bearbeitenden Geometries und ersetzt es
+            device_index = -1
+            for i, dev in enumerate(current_profile_data["devices"]):
+                if dev.get("uuid") == updated_device_data.get("uuid"):
+                    device_index = i
                     break
             
-            if device_found:
+            if device_index != -1:
+                current_profile_data["devices"][device_index] = updated_device_data
                 self._save_current_profile_data()
                 self._load_devices_into_table(current_profile_data["devices"])
-                self.shared_data.info_manager.status(InfoManager.INFO, f"Gerät '{updated_device_data['device_name']}' wurde erfolgreich aktualisiert.")
-                self._select_device_by_uuid(updated_device_data.get("uuid")) 
+                self.shared_data.info_manager.status(InfoManager.INFO, f"Geometrie '{updated_device_data['device_name']}' erfolgreich aktualisiert.")
+                self._select_device_by_uuid(updated_device_data.get("uuid"))
             else:
-                self.shared_data.info_manager.status(InfoManager.ERROR, "Gerät zur Aktualisierung im Profil nicht gefunden.")
-                QMessageBox.warning(self, "Fehler", "Gerät zur Aktualisierung im Profil nicht gefunden.")
-
-        elif getattr(dialog, 'delete_confirmed', False): # Check if delete was confirmed in dialog
-            self.delete_device(device_to_edit.get("uuid"))
+                self.shared_data.info_manager.status(InfoManager.ERROR, "Fehler: Geometrie zum Aktualisieren nicht gefunden.")
+                QMessageBox.critical(self, "Fehler", "Geometrie zum Aktualisieren nicht gefunden.")
         else:
-            self.shared_data.info_manager.status(InfoManager.INFO, "Gerät bearbeiten abgebrochen.")
+            self.shared_data.info_manager.status(InfoManager.INFO, "Geometrie bearbeiten abgebrochen.")
 
     def show_device_context_menu(self, pos):
-        """Shows a context menu (Bearbeiten, Löschen) for the device table."""
-        if not self.current_profile_id:
-            self.shared_data.info_manager.status(InfoManager.INFO, "Kein Profil ausgewählt, Kontextmenü für Gerät ist nicht verfügbar.")
-            return
+        """Zeigt ein Kontextmenü für die Geometrietabelle an, das Bearbeiten und Löschen ermöglicht."""
         item = self.device_table.itemAt(pos)
-        if item:
-            row = item.row()
-            menu = QMenu(self)
-            edit_action = menu.addAction("Bearbeiten")
-            delete_action = menu.addAction("Löschen")
-            action = menu.exec(self.device_table.mapToGlobal(pos))
-            if action == edit_action:
-                self.edit_device_from_table(row, 0)
-            elif action == delete_action:
-                device_to_delete = self._get_device_data_from_row(row)
-                if device_to_delete:
-                    reply = QMessageBox.question(self, "Gerät löschen",
-                                                 f"Möchten Sie das Gerät '{device_to_delete.get('device_name', 'Unbekannt')}' wirklich löschen?",
-                                                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                    if reply == QMessageBox.StandardButton.Yes:
-                        self.delete_device(device_to_delete.get("uuid"))
-                    else:
-                        self.shared_data.info_manager.status(InfoManager.INFO, f"Löschen von Gerät '{device_to_delete.get('device_name', 'Unbekannt')}' abgebrochen.")
+        if not item:
+            return
+
+        context_menu = QMenu(self)
+        edit_action = context_menu.addAction("Bearbeiten")
+        delete_action = context_menu.addAction("Löschen")
+        
+        action = context_menu.exec(self.device_table.mapToGlobal(pos))
+        
+        if action == edit_action:
+            self.edit_device_from_table(item.row(), 0)
+        elif action == delete_action:
+            # KORREKTUR: Hol dir die Daten aus der Zeile
+            device_data = self._get_device_data_from_row(item.row())
+            if not device_data:
+                return
+
+            # Frage nach Bestätigung
+            device_name = device_data.get("device_name", "Unbekannt")
+            reply = QMessageBox.question(self, "Geometrie löschen",
+                                        f"Möchten Sie die Geometrie '{device_name}' wirklich löschen?",
+                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            
+            if reply == QMessageBox.StandardButton.Yes:
+                # Rufe die Löschfunktion mit der korrekten UUID auf
+                uuid_to_delete = device_data.get("uuid")
+                if uuid_to_delete:
+                    self.delete_device(uuid_to_delete)
 
     def delete_device(self, device_uuid):
         """Deletes a device from the current profile by its UUID."""
@@ -708,13 +752,13 @@ class ProfileTab(QWidget):
             current_profile_data["devices"] = updated_devices
             self._save_current_profile_data()
             self._load_devices_into_table(current_profile_data["devices"])
-            self.shared_data.info_manager.status(InfoManager.INFO, f"Gerät '{device_name_to_delete}' wurde erfolgreich gelöscht.")
+            self.shared_data.info_manager.status(InfoManager.INFO, f"Geometrie '{device_name_to_delete}' wurde erfolgreich gelöscht.")
             if self.shared_data.current_device and self.shared_data.current_device.get("uuid") == device_uuid:
                 self.shared_data.current_device = None
             self._select_last_used_device_in_profile()
         else:
-            self.shared_data.info_manager.status(InfoManager.ERROR, "Gerät nicht gefunden oder konnte nicht gelöscht werden.")
-            QMessageBox.warning(self, "Fehler", "Gerät nicht gefunden oder konnte nicht gelöscht werden.")
+            self.shared_data.info_manager.status(InfoManager.ERROR, "Geometrie nicht gefunden oder konnte nicht gelöscht werden.")
+            QMessageBox.warning(self, "Fehler", "Geometrie nicht gefunden oder konnte nicht gelöscht werden.")
 
     def _select_device_by_uuid(self, uuid_to_select):
         """
@@ -722,15 +766,15 @@ class ProfileTab(QWidget):
         This also triggers on_device_selection_changed to update shared_data.
         """
         if not uuid_to_select:
-            self.shared_data.info_manager.status(InfoManager.WARNING, "Keine UUID zum Auswählen des Geräts angegeben.")
+            self.shared_data.info_manager.status(InfoManager.WARNING, "Keine UUID zum Auswählen des Geometries angegeben.")
             return
         for row in range(self.device_table.rowCount()):
             device = self._get_device_data_from_row(row)
             if device and device.get("uuid") == uuid_to_select:
                 self.device_table.selectRow(row)
                 self.on_device_selection_changed(row, 0)
-                self.shared_data.info_manager.status(InfoManager.INFO, f"Gerät mit UUID '{uuid_to_select}' ausgewählt.")
+                self.shared_data.info_manager.status(InfoManager.INFO, f"Geometrie mit UUID '{uuid_to_select}' ausgewählt.")
                 return 
         
-        self.shared_data.info_manager.status(InfoManager.WARNING, f"Gerät mit UUID '{uuid_to_select}' nicht in der Tabelle gefunden.")
+        self.shared_data.info_manager.status(InfoManager.WARNING, f"Geometrie mit UUID '{uuid_to_select}' nicht in der Tabelle gefunden.")
         self.shared_data.current_device = None
