@@ -207,7 +207,7 @@ class DeviceDrawingWidget(QWidget):
 class DeviceDialog(QDialog):
     def __init__(self, parent=None, device_data=None, existing_device_names=None):
         super().__init__(parent)
-        self.setWindowTitle("Gerät bearbeiten/hinzufügen")
+        self.setWindowTitle("Geometrie bearbeiten/hinzufügen")
         self.setModal(True)
         
         # Internal data model for the dialog. All dimensions in micrometers (um).
@@ -239,11 +239,18 @@ class DeviceDialog(QDialog):
         # --- Left Side: Form ---
         form_widget = QWidget()
         form_layout = QVBoxLayout(form_widget)
+        self.fields = {} # To store references to QLineEdit widgets
+        self.labels = {} # To store references to QLabel widgets
+
+        # Device Name
+        form_layout.addWidget(QLabel("Name"))
+        self.fields["device_name"] = QLineEdit()
+        form_layout.addWidget(self.fields["device_name"])
+    
 
         # Group box for shape selection
-        shape_group_box = QGroupBox("Form")
-        shape_layout = QVBoxLayout(shape_group_box)
-        
+    
+        form_layout.addWidget(QLabel("Form"))
         self.radio_rect = QRadioButton("Rechteck")
         self.radio_circle = QRadioButton("Kreis")
         
@@ -252,20 +259,11 @@ class DeviceDialog(QDialog):
         self.shape_button_group.addButton(self.radio_circle)
         self.shape_button_group.buttonClicked.connect(self._on_shape_type_radio_changed)
 
-        shape_layout.addWidget(self.radio_rect)
-        shape_layout.addWidget(self.radio_circle)
-        form_layout.addWidget(shape_group_box)
+        form_layout.addWidget(self.radio_rect)
+        form_layout.addWidget(self.radio_circle)
 
-        self.fields = {} # To store references to QLineEdit widgets
-        self.labels = {} # To store references to QLabel widgets
 
-        # Device Name
-        name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel("Gerätename:"))
-        self.fields["device_name"] = QLineEdit()
-        name_layout.addWidget(self.fields["device_name"])
-        form_layout.addLayout(name_layout)
-
+        
         # Dimensions: Width, Length, Radius
         # We connect textChanged AFTER initial UI population, but manage _is_updating_ui flag.
         self.labels["width"] = QLabel("Breite (um):") 
@@ -318,7 +316,7 @@ class DeviceDialog(QDialog):
 
         # Buttons
         button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
-        
+
         save_button = button_box.button(QDialogButtonBox.StandardButton.Save)
         if save_button:
             save_button.setText("Speichern") # Change "Save" to "Speichern"

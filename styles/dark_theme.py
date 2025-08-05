@@ -42,13 +42,16 @@ COLOR_SCHEME = {
 
     # Textfarben
     "text_primary":  hsl(49, 11, 95),
-    "text_disabled": hsl(204, 30, 40),
+    "text_disabled": hsl(49, 11, 30),
     "text_inverse": hsl(49, 11, 95),
 
     # Akzentfarben (Buttons etc.)
     "accent": hsl(49, 11, 40),
     "accent_hover": hsl(49, 11, 50),
     "accent_pressed": hsl(49, 11, 50),
+    "accent_brigther": hsl(49, 11, 50),
+    "accent_brigthest": hsl(49, 11, 60),
+    
 
     # Info / Fortschritt
     "info": hsl(204, 90, 60),
@@ -56,6 +59,9 @@ COLOR_SCHEME = {
     # Warnungen
     "error": hsl(0, 80, 60),
     "warning": hsl(40, 90, 60),
+
+    #Transparent
+    "transparent": "rgba(0, 0, 0, 0)",
 }
 
 # === QSS-Vorlage mit Platzhaltern === #
@@ -63,13 +69,36 @@ STYLE_TEMPLATE = """
 MainWindow {{
     background-color: {bg_darkest};
 }}
-
 QWidget {{
-    background-color: {bg_darkest};
     color: {text_primary};
+    background-color: {transparent};
+    font-family: 'Segoe UI';
+    font-size: 12px;
+    font-weight: 600; 
+}}
+QWidget#Main {{
+    color: {text_primary};
+    background-color: {bg_darkest};
     font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     font-size: 12px;
     font-weight: 600; 
+}}
+QWidget#FCBLOCK1 {{
+    background-color: {bg_darker};
+    border-radius: 2px;
+    border: 1px solid {accent};
+}}
+
+QWidget#FCBLOCK2 {{
+    background-color: {bg_mid};
+    border-radius: 2px;
+    border: 1px solid {accent};
+}}
+
+QWidget#FCBLOCK3 {{
+    background-color: {bg_light};
+    border-radius: 2px;
+    border: 1px solid {accent};
 }}
 
 QTableWidget {{
@@ -135,6 +164,8 @@ QPushButton {{
     border-radius: 2px;
 }}
 
+
+
 QPushButton:hover {{
     background-color: {accent_hover};
 }}
@@ -156,9 +187,22 @@ QLabel {{
 QLabel#Title {{
     color: {text_primary};
     padding: 0px 0px 20px 0px;  
-
     font-size: 28px;
 }}
+QLabel#smallTitle {{
+    color: {text_primary};
+    padding: 0px 0px 0px 0px;  
+    font-size: 22px;
+}}
+QLabel#miniTitle {{
+    color: {text_primary};
+    padding: 0px 0px 0px 0px;  
+    font-size: 16px;
+}}
+
+
+
+
 
 /* =======================
    QLineEdit
@@ -248,6 +292,15 @@ QTabBar::tab:hover {{
     background: {bg_light};
     color: {text_primary};
 }}
+
+#ArrowWidget[active="true"] {{
+    color: {accent_brigthest};
+}}
+
+#ArrowWidget[active="false"] {{
+    color: {accent};
+}}
+
 """
 
 # === Generiere finalen Stylesheet-String === #

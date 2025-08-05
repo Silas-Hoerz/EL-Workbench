@@ -31,7 +31,8 @@ from PyQt6.QtWidgets import (
     QLineEdit, QMessageBox, QInputDialog, QLabel,
     QDialog, QHeaderView, QMenu, QSizePolicy, QFileDialog
 )
-from PyQt6.QtCore import QTimer, Qt, QSettings
+from PyQt6.QtCore import QTimer, Qt, QSettings, QSize
+from PyQt6.QtGui import QIcon
 
 # Importiere DeviceDialog und InfoManager.
 from other.info import InfoManager
@@ -126,8 +127,11 @@ class ProfileTab(QWidget):
         self.directory_field = QLineEdit()
         self.directory_field.setReadOnly(True) # Das Verzeichnis-Feld ist schreibgeschützt
         storage_location_layout.addWidget(self.directory_field)
-        self.button_select_directory = QPushButton("🖿")
-        self.button_select_directory.setStyleSheet("font-weight: bold; font-size: 16px;")
+        self.button_select_directory = QPushButton()
+
+        self.button_select_directory.setIcon(QIcon(os.path.join(BASE_DIR, "icons", "folder.svg")))
+        self.button_select_directory.setIconSize(QSize(20, 20)) 
+       
         self.button_select_directory.clicked.connect(self._select_storage_location)
         storage_location_layout.addWidget(self.button_select_directory)
         profile_attr_layout.addLayout(storage_location_layout)

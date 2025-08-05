@@ -37,6 +37,7 @@ __version__ = "1.1.0"
 # --- Importiere die Styles und die einzelnen Tab-Klassen ---
 from styles.dark_theme import DARK_STYLESHEET
 from tabs.profile_tab import ProfileTab
+from tabs.analysis_tab import AnalysisTab
 from tabs.spectrum_tab import SpectrumTab
 from tabs.smu_tab import SmuTab
 from tabs.sweep_tab import SweepTab
@@ -108,6 +109,7 @@ class MainWindow(QMainWindow):
 
         # Erstelle ein zentrales Widget und ein Haupt-Layout dafür
         self.central_widget = QWidget()
+        self.central_widget.setObjectName("Main")
         self.main_layout = QVBoxLayout(self.central_widget)
         self.setCentralWidget(self.central_widget)
         
@@ -139,10 +141,14 @@ class MainWindow(QMainWindow):
         
         # Profilverwaltungs-Tab - verwaltet Benutzerprofile und Gerätekonfigurationen
         self.profile_tab_widget = ProfileTab(self.shared_data)
-        self.tabs.addTab(self.profile_tab_widget, "Profile")
+        
 
         # === MESS-TABS ===
-        
+
+        # Analyse-Tab - für Datenanalyse und Visualisierung
+        self.analysis_tab_widget = AnalysisTab(self.shared_data)
+        self.tabs.addTab(self.analysis_tab_widget, "Analyse")
+        self.tabs.addTab(self.profile_tab_widget, "Profile")
         # Spektrometer-Steuerungs-Tab - verwaltet Ocean Optics Spektrometer
         self.spectrum_tab_widget = SpectrumTab(self.shared_data)
         self.tabs.addTab(self.spectrum_tab_widget, "Spektrometer")

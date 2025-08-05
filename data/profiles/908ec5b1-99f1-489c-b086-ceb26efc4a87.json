@@ -1,0 +1,19 @@
+{
+    "id": "908ec5b1-99f1-489c-b086-ceb26efc4a87",
+    "name": "Blajsahsd",
+    "storage_location": "C:/Users/Silas/Downloads",
+    "last_sample_id": "V595",
+    "devices": [
+        {
+            "device_name": "PIN 100",
+            "shape_type": "rectangle",
+            "custom_area_enabled": true,
+            "uuid": "36de5bce-7bfb-4df6-827b-e8bebe34039a",
+            "width": 9.999999999999999e-05,
+            "length": 9.999999999999999e-05,
+            "radius": 0.0,
+            "Area": 5e-09
+        }
+    ],
+    "last_selected_device_uuid": "36de5bce-7bfb-4df6-827b-e8bebe34039a"
+}
