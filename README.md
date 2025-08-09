@@ -11,23 +11,6 @@
 
 ## Deutsche Version
 
-### Problemstellung
-
-EL-Workbench löst das Problem der **fragmentierten Laborgerätesteuerung** in Forschungsumgebungen. Anstatt separate Software-Tools für verschiedene Instrumente zu verwenden, haben Forscher oft Schwierigkeiten mit:
-
-- **Unverbundenen Arbeitsabläufen** zwischen Messung und Analyse
-- **Inkonsistenten Datenformaten** zwischen verschiedenen Geräten
-- **Fehlender Benutzerprofilverwaltung** für gemeinsam genutzte Laborgeräte
-- **Steilen Lernkurven** für Studenten und neue Forscher
-- **Schwierigkeiten bei der Funktionserweiterung** für spezifische Forschungsanforderungen
-
-**EL-Workbench löst diese Probleme durch:**
-- Einheitliche Steuerungsschnittstelle für mehrere Laborinstrumente
-- Zentralisierte Datenverwaltung mit konsistenten Formaten
-- Benutzerprofil-System für personalisierte Konfigurationen
-- Studentenfreundliche Architektur mit klaren Erweiterungsmustern
-- Modulares Design für einfache Hinzufügung neuer Funktionalität
-
 ### Installation
 
 #### Voraussetzungen
@@ -231,23 +214,6 @@ el-workbench/
 ---
 
 ## English Version
-
-### Problem Solved
-
-EL-Workbench addresses the challenge of **fragmented laboratory equipment control** in research environments. Instead of using separate software tools for different instruments, researchers often struggle with:
-
-- **Disconnected workflows** between measurement and analysis
-- **Inconsistent data formats** across different devices
-- **Lack of user profile management** for shared laboratory equipment
-- **Steep learning curves** for students and new researchers
-- **Difficulty extending functionality** for specific research needs
-
-**EL-Workbench solves these problems by providing:**
-- Unified control interface for multiple laboratory instruments
-- Centralized data management with consistent formats
-- User profile system for personalized configurations
-- Student-friendly architecture with clear extension patterns
-- Modular design allowing easy addition of new functionality
 
 ### Installation
 
