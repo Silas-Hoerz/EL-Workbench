@@ -29,6 +29,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QTimer, QSize, QPoint, QPointF, Qt
 from PyQt6.QtGui import QIcon, QPainter, QPen, QPainterPath, QColor
+import other.measurement
+from other.info import InfoManager
 
 # Basisverzeichnis für Icons
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -39,6 +41,7 @@ class AnalysisTab(QWidget):
         """
         Initialisiert den Analyse-Tab.
         """
+
         super().__init__()
         self.shared_data = shared_data
         self._init_ui()
@@ -363,10 +366,33 @@ class AnalysisTab(QWidget):
         left_layout.addWidget(self.arrow_4_5)
         left_layout.addWidget(self.block5_widget)
         left_layout.addStretch()
+        
+
+        # ---------------------------------------------------
+        # Rechtes LAYOUT
+        # ---------------------------------------------------
+        right_layout = QVBoxLayout()
+        # --- Layout erstellen ---
+        action_button_layout = QHBoxLayout()  # Horizontales Layout
+
+        # --- Buttons erstellen ---
+        btn_start = QPushButton("Start")
+        btn_start.clicked.connect(other.measurement.start)
+        btn_stop = QPushButton("Stop")
+        btn_pause = QPushButton("Pause")
+
+        # --- Buttons ins Layout einfügen ---
+        action_button_layout.addWidget(btn_start)
+        action_button_layout.addWidget(btn_stop)
+        action_button_layout.addWidget(btn_pause)
+        action_button_layout.addStretch()
+
+        right_layout.addLayout(action_button_layout)
+        right_layout.addStretch()
 
         # Hauptlayout
-        main_layout.addLayout(left_layout)
-        main_layout.addStretch(3)
+        main_layout.addLayout(left_layout,0)
+        main_layout.addLayout(right_layout,1)
 
         # Pfeil-Widgets (Loop)
         self.block3_arrow = ArrowWidget(parent=self, arrow_type="loop", radius=16)
@@ -402,6 +428,12 @@ class AnalysisTab(QWidget):
         self.block2_arrow.setGeometry(self.rect())
         self.block3_arrow.setGeometry(self.rect())
         self.update_arrow_positions()
+
+    def start_measurement(self):
+        """
+        Ruft die Startfunktion aus measurement.py auf und sendet eine Info-Meldung.
+        """
+        other.measurement.start(self.shared_data)
 
 
 # =========================================================
